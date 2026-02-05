@@ -1,0 +1,217 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 租户
+model Company {
+  id        Int      @id @default(autoincrement())
+  uuid      String   @unique @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users      User[]
+  agents     Agent[]
+  apiKeys    ApiKey[]
+  projects   Project[]
+  ideas      Idea[]
+  documents  Document[]
+  tasks      Task[]
+  proposals  Proposal[]
+  activities Activity[]
+  comments   Comment[]
+}
+
+// 用户（人类，OIDC 登录）
+model User {
+  id        Int      @id @default(autoincrement())
+  uuid      String   @unique @default(uuid())
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id])
+  oidcSub   String   @unique    // OIDC subject
+  email     String?
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  ownedAgents Agent[]
+}
+
+// Agent（Claude Code 等）
+model Agent {
+  id           Int       @id @default(autoincrement())
+  uuid         String    @unique @default(uuid())
+  companyId    Int
+  company      Company   @relation(fields: [companyId], references: [id])
+  name         String
+  roles        String[]  @default(["developer"])  // pm | developer（可多选）
+  ownerId      Int?
+  owner        User?     @relation(fields: [ownerId], references: [id])
+  lastActiveAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  apiKeys ApiKey[]
+}
+
+// API Key（独立管理，支持轮换和撤销）
+model ApiKey {
+  id        Int       @id @default(autoincrement())
+  uuid      String    @unique @default(uuid())
+  companyId Int
+  company   Company   @relation(fields: [companyId], references: [id])
+  agentId   Int
+  agent     Agent     @relation(fields: [agentId], references: [id])
+  keyHash   String    @unique    // API Key 哈希存储
+  keyPrefix String               // Key 前缀，用于显示（如 "cho_xxx..."）
+  name      String?              // 可选的描述名称
+  lastUsed  DateTime?
+  expiresAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// 项目
+model Project {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id])
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ideas      Idea[]
+  documents  Document[]
+  tasks      Task[]
+  proposals  Proposal[]
+  activities Activity[]
+}
+
+// 想法（人类原始输入）
+model Idea {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id])
+  projectId   Int
+  project     Project  @relation(fields: [projectId], references: [id])
+  title       String
+  content     String?  // 文本内容
+  attachments Json?    // 附件列表 [{type, url, name}]
+  createdBy   Int      // User ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 文档（PRD、技术设计等，Proposal 产物）
+model Document {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @unique @default(uuid())
+  companyId   Int
+  company     Company   @relation(fields: [companyId], references: [id])
+  projectId   Int
+  project     Project   @relation(fields: [projectId], references: [id])
+  type        String    // prd | tech_design | adr | ...
+  title       String
+  content     String?   // Markdown 内容
+  version     Int       @default(1)
+  proposalId  Int?      // 来源 Proposal（可追溯）
+  createdBy   Int       // User ID 或 Agent ID
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// 任务（Proposal 产物或人工创建）
+model Task {
+  id           Int      @id @default(autoincrement())
+  uuid         String   @unique @default(uuid())
+  companyId    Int
+  company      Company  @relation(fields: [companyId], references: [id])
+  projectId    Int
+  project      Project  @relation(fields: [projectId], references: [id])
+  title        String
+  description  String?
+  status       String   @default("todo")  // todo | in_progress | to_verify | done
+  priority     String   @default("medium") // low | medium | high
+  assigneeType String?  // user | agent
+  assigneeId   Int?
+  proposalId   Int?     // 来源 Proposal（可追溯，可选）
+  createdBy    Int      // User ID 或 Agent ID
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  activities Activity[]
+}
+
+// 提议（Agent 创建，人类审批，连接输入和输出）
+model Proposal {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @unique @default(uuid())
+  companyId   Int
+  company     Company   @relation(fields: [companyId], references: [id])
+  projectId   Int
+  project     Project   @relation(fields: [projectId], references: [id])
+  title       String
+  description String?
+
+  // 输入（Proposal 基于什么创建）
+  inputType   String    // idea | document
+  inputIds    Json      // 关联的输入 ID 列表（数字 ID 数组）
+
+  // 输出（Proposal 产出什么）
+  outputType  String    // document | task
+  outputData  Json      // 提议的内容（Document 草稿或 Task 列表）
+
+  // 状态与审批
+  status      String    @default("pending")  // pending | approved | rejected | revised
+  createdBy   Int       // Agent ID
+  reviewedBy  Int?      // User ID
+  reviewNote  String?   // 审批备注
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// 评论（可以评论 Idea、Proposal、Task、Document）
+model Comment {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id])
+  targetType  String   // idea | proposal | task | document
+  targetId    Int      // 目标实体的 ID
+  content     String
+  authorType  String   // user | agent
+  authorId    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 活动流（项目级）
+model Activity {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid())
+  companyId  Int
+  company    Company  @relation(fields: [companyId], references: [id])
+  projectId  Int
+  project    Project  @relation(fields: [projectId], references: [id])
+  // 关联实体（可选，用于追溯）
+  ideaId     Int?
+  documentId Int?
+  proposalId Int?
+  taskId     Int?
+  task       Task?    @relation(fields: [taskId], references: [id])
+  // 操作信息
+  actorType  String   // user | agent
+  actorId    Int
+  action     String   // idea_created | proposal_created | proposal_approved | document_created | task_created | task_updated | comment_added | ...
+  payload    Json?    // 额外数据
+  createdAt  DateTime @default(now())
+}
