@@ -1,7 +1,7 @@
 // src/types/auth.ts
 // 认证相关类型定义 (ARCHITECTURE.md §6)
 
-export type ActorType = "user" | "agent";
+export type ActorType = "user" | "agent" | "super_admin";
 export type AgentRole = "pm" | "developer";
 
 // 当前请求的认证上下文
@@ -27,6 +27,12 @@ export interface AgentAuthContext extends AuthContext {
   roles: AgentRole[];
   ownerId?: number;
   agentName: string;
+}
+
+// Super Admin 认证上下文
+export interface SuperAdminAuthContext {
+  type: "super_admin";
+  email: string;
 }
 
 // API Key 验证结果

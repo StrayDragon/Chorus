@@ -8,8 +8,10 @@ import type {
   AuthContext,
   AgentAuthContext,
   UserAuthContext,
+  SuperAdminAuthContext,
   AgentRole,
 } from "@/types/auth";
+import { getSuperAdminFromRequest } from "./super-admin";
 
 // 从请求获取认证上下文
 export async function getAuthContext(
@@ -182,4 +184,31 @@ export function isAssignee(
   }
 
   return false;
+}
+
+// 检查是否为 Super Admin
+export function isSuperAdmin(
+  ctx: AuthContext | SuperAdminAuthContext
+): ctx is SuperAdminAuthContext {
+  return ctx.type === "super_admin";
+}
+
+// 要求 Super Admin 认证
+export function requireSuperAdmin<T>(
+  handler: (
+    request: NextRequest,
+    context: { params: Promise<T> },
+    auth: SuperAdminAuthContext
+  ) => Promise<Response>
+) {
+  return async (
+    request: NextRequest,
+    context: { params: Promise<T> }
+  ): Promise<Response> => {
+    const auth = await getSuperAdminFromRequest(request);
+    if (!auth) {
+      return errors.unauthorized("Super Admin authentication required");
+    }
+    return handler(request, context, auth);
+  };
 }

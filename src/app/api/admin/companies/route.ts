@@ -1,0 +1,70 @@
+// src/app/api/admin/companies/route.ts
+// Company 列表和创建 API (Super Admin Only)
+
+import { NextRequest } from "next/server";
+import { withErrorHandler, parseBody, parsePagination } from "@/lib/api-handler";
+import { success, paginated, errors } from "@/lib/api-response";
+import { requireSuperAdmin } from "@/lib/auth";
+import * as companyService from "@/services/company.service";
+import { CompanyCreateInput } from "@/types/admin";
+
+// GET /api/admin/companies - 列表
+export const GET = withErrorHandler(
+  requireSuperAdmin(async (request: NextRequest) => {
+    const { page, pageSize, skip, take } = parsePagination(request);
+
+    const { companies, total } = await companyService.listCompanies({
+      skip,
+      take,
+    });
+
+    const data = companies.map((c) => ({
+      uuid: c.uuid,
+      name: c.name,
+      emailDomains: c.emailDomains,
+      oidcEnabled: c.oidcEnabled,
+      userCount: c._count.users,
+      agentCount: c._count.agents,
+      createdAt: c.createdAt.toISOString(),
+    }));
+
+    return paginated(data, page, pageSize, total);
+  })
+);
+
+// POST /api/admin/companies - 创建
+export const POST = withErrorHandler(
+  requireSuperAdmin(async (request: NextRequest) => {
+    const body = await parseBody<CompanyCreateInput>(request);
+
+    // 验证输入
+    if (!body.name || body.name.trim() === "") {
+      return errors.validationError({ name: "Name is required" });
+    }
+
+    // 验证邮箱域名唯一性
+    if (body.emailDomains && body.emailDomains.length > 0) {
+      for (const domain of body.emailDomains) {
+        const isTaken = await companyService.isEmailDomainTaken(domain);
+        if (isTaken) {
+          return errors.conflict(`Email domain "${domain}" is already in use`);
+        }
+      }
+    }
+
+    const company = await companyService.createCompany({
+      name: body.name.trim(),
+      emailDomains: body.emailDomains,
+    });
+
+    return success({
+      uuid: company.uuid,
+      name: company.name,
+      emailDomains: company.emailDomains,
+      oidcEnabled: company.oidcEnabled,
+      userCount: 0,
+      agentCount: 0,
+      createdAt: company.createdAt.toISOString(),
+    });
+  })
+);

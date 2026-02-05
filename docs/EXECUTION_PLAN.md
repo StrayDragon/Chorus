@@ -331,6 +331,150 @@ pnpm db:generate
 
 ---
 
+## M2.5: Super Admin 认证 (Week 3)
+
+### 目标
+实现 Super Admin 登录和 Company 管理，作为多租户系统的 Bootstrap 入口。
+
+> **PRD 参考**: `PRD_Chorus.md` §4.2.1 Bootstrap 方案, §7.4 Super Admin 认证
+> **架构参考**: `ARCHITECTURE.md` §6.1.1 Super Admin 认证
+
+### 环境变量
+
+```bash
+# Super Admin 配置（.env）
+SUPER_ADMIN_EMAIL="admin@chorus.dev"
+# 注意：bcrypt hash 中的 $ 需要转义
+SUPER_ADMIN_PASSWORD_HASH='\$2b\$10\$...'
+```
+
+生成密码哈希：
+```bash
+node -e "require('bcrypt').hash('your-password', 10).then(console.log)"
+```
+
+### 任务清单
+
+#### M2.5.1 类型定义 ✅
+- [x] 创建 `src/types/admin.ts` - CompanyListItem, CompanyDetail, IdentifyResponse
+- [x] 更新 `src/types/auth.ts` - 添加 SuperAdminAuthContext, ActorType
+
+#### M2.5.2 认证库 ✅
+> 代码位置: `src/lib/super-admin.ts`
+
+- [x] `isSuperAdminEmail(email)` - 检查是否是 Super Admin 邮箱
+- [x] `verifySuperAdminPassword(password)` - bcrypt 密码验证
+- [x] `createAdminToken()` - 创建 JWT Token
+- [x] `verifyAdminToken(token)` - 验证 JWT Token
+- [x] `getSuperAdminFromRequest(request)` - 从 Cookie 获取认证上下文
+- [x] `setAdminCookie() / clearAdminCookie()` - Cookie 管理
+
+#### M2.5.3 Company 服务 ✅
+> 代码位置: `src/services/company.service.ts`
+
+- [x] `listCompanies({ skip, take })` - 分页列表
+- [x] `getCompanyByUuid(uuid)` - 获取详情
+- [x] `getCompanyByEmailDomain(email)` - 按邮箱域名查找
+- [x] `createCompany(data)` - 创建 Company
+- [x] `updateCompany(id, data)` - 更新 Company（含 OIDC 配置）
+- [x] `deleteCompany(id)` - 删除 Company（级联清理）
+- [x] `isEmailDomainTaken(domain)` - 邮箱域名唯一性检查
+
+#### M2.5.4 API 路由 ✅
+
+| 路由 | 方法 | 描述 | 状态 |
+|------|------|------|------|
+| `/api/auth/identify` | POST | 邮箱识别（super_admin/oidc/not_found） | ✅ |
+| `/api/admin/login` | POST | Super Admin 密码登录 | ✅ |
+| `/api/admin/session` | GET | 会话检查 | ✅ |
+| `/api/admin/session` | DELETE | 登出 | ✅ |
+| `/api/admin/companies` | GET | Company 列表 | ✅ |
+| `/api/admin/companies` | POST | 创建 Company | ✅ |
+| `/api/admin/companies/[uuid]` | GET | Company 详情 | ✅ |
+| `/api/admin/companies/[uuid]` | PATCH | 更新 Company | ✅ |
+| `/api/admin/companies/[uuid]` | DELETE | 删除 Company | ✅ |
+
+#### M2.5.5 UI 组件 ✅
+
+shadcn 组件：
+- [x] `src/components/ui/input.tsx`
+- [x] `src/components/ui/label.tsx`
+- [x] `src/components/ui/table.tsx`
+- [x] `src/components/ui/badge.tsx`
+
+#### M2.5.6 页面 ✅
+
+| 页面 | 路径 | 描述 | 状态 |
+|------|------|------|------|
+| 登录 | `/login` | 邮箱输入页 | ✅ |
+| Admin 登录 | `/login/admin` | Super Admin 密码页 | ✅ |
+| Admin 布局 | `/admin/layout.tsx` | 认证检查 + 侧边栏 | ✅ |
+| Admin Dashboard | `/admin` | 统计卡片 + 快捷操作 | ✅ |
+| Company 列表 | `/admin/companies` | 表格 + CRUD 操作 | ✅ |
+| 新建 Company | `/admin/companies/new` | 创建表单 | ✅ |
+| Company 详情 | `/admin/companies/[uuid]` | 详情/编辑/OIDC 配置 | ✅ |
+
+#### M2.5.7 验证 🔄 进行中
+
+- [x] API 测试通过
+  - [x] `/api/auth/identify` - Super Admin 邮箱识别
+  - [x] `/api/admin/login` - 密码登录
+  - [x] `/api/admin/session` - 会话检查
+  - [x] `/api/admin/companies` - CRUD 操作
+- [x] 登录页面渲染正常
+- [ ] 完整 UI 流程测试（Playwright）
+- [ ] Company OIDC 配置验证
+
+### 关键文件
+
+```
+src/
+├── app/
+│   ├── login/
+│   │   ├── page.tsx              # 邮箱输入页
+│   │   └── admin/page.tsx        # Super Admin 密码页
+│   ├── admin/
+│   │   ├── layout.tsx            # Admin 布局 + 认证检查
+│   │   ├── page.tsx              # Dashboard
+│   │   └── companies/
+│   │       ├── page.tsx          # Company 列表
+│   │       ├── new/page.tsx      # 创建 Company
+│   │       └── [uuid]/page.tsx   # Company 详情/编辑
+│   └── api/
+│       ├── auth/identify/route.ts     # 邮箱识别
+│       └── admin/
+│           ├── login/route.ts         # 登录
+│           ├── session/route.ts       # 会话管理
+│           └── companies/
+│               ├── route.ts           # 列表/创建
+│               └── [uuid]/route.ts    # 详情/更新/删除
+├── components/ui/
+│   ├── input.tsx
+│   ├── label.tsx
+│   ├── table.tsx
+│   └── badge.tsx
+├── lib/
+│   └── super-admin.ts            # 认证工具
+├── services/
+│   └── company.service.ts        # Company CRUD
+└── types/
+    ├── auth.ts                   # 认证类型
+    └── admin.ts                  # Admin 类型
+```
+
+### 已知问题
+
+1. **bcrypt hash 转义**: .env 文件中的 `$` 字符需要使用单引号包裹并转义 `\$`
+2. **测试密码**: 开发环境使用 `admin123`（生产环境需更换）
+
+### 交付物
+- Super Admin 登录流程
+- Company 管理 CRUD
+- OIDC 配置管理
+- 多租户 Bootstrap 入口
+
+---
+
 ## M3: Web UI (Week 4)
 
 ### 目标
@@ -564,6 +708,8 @@ M1 (后端 API) ←─────────────┐
  ↓                          │
 M2 (MCP Server) ───────────→│
  ↓                          │
+M2.5 (Super Admin) ─────────┤  ← 当前进度
+ ↓                          │
 M3 (Web UI) ←───────────────┘
  ↓
 M4 (Skill 文件)
@@ -577,6 +723,9 @@ M5 (联调测试)
 
 | 页面名称 | 设计稿节点 | 对应功能 |
 |---------|-----------|---------|
+| Login - Email Input | - | 登录邮箱输入页 |
+| Super Admin - Password Login | - | Super Admin 密码登录页 |
+| Super Admin - Companies | - | Company 管理列表页 |
 | Chorus - Projects | f2Faj | 项目列表 |
 | Chorus - New Project | MsJV4 | 创建项目表单 |
 | Chorus - Project Overview | QQV0z | 项目概览 |
