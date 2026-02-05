@@ -1,0 +1,214 @@
+// src/mcp/tools/developer.ts
+// Developer Agent 专属 MCP 工具 (ARCHITECTURE.md §5.2)
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import type { AgentAuthContext } from "@/types/auth";
+import * as taskService from "@/services/task.service";
+import * as activityService from "@/services/activity.service";
+
+export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext) {
+  // chorus_claim_task - 认领 Task
+  server.registerTool(
+    "chorus_claim_task",
+    {
+      description: "认领一个 Task（open → assigned）",
+      inputSchema: z.object({
+        taskUuid: z.string().describe("Task UUID"),
+      }),
+    },
+    async ({ taskUuid }) => {
+      const task = await taskService.getTaskById(auth.companyId, taskUuid);
+      if (!task) {
+        return { content: [{ type: "text", text: "Task 不存在" }], isError: true };
+      }
+
+      if (task.status !== "open") {
+        return { content: [{ type: "text", text: "只能认领 open 状态的 Task" }], isError: true };
+      }
+
+      const updated = await taskService.claimTask({
+        taskId: task.id,
+        assigneeType: "agent",
+        assigneeId: auth.actorId,
+      });
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
+      };
+    }
+  );
+
+  // chorus_release_task - 放弃认领 Task
+  server.registerTool(
+    "chorus_release_task",
+    {
+      description: "放弃认领 Task（assigned → open）",
+      inputSchema: z.object({
+        taskUuid: z.string().describe("Task UUID"),
+      }),
+    },
+    async ({ taskUuid }) => {
+      const task = await taskService.getTaskById(auth.companyId, taskUuid);
+      if (!task) {
+        return { content: [{ type: "text", text: "Task 不存在" }], isError: true };
+      }
+
+      if (task.status !== "assigned") {
+        return { content: [{ type: "text", text: "只能放弃 assigned 状态的 Task" }], isError: true };
+      }
+
+      // 检查是否是认领者
+      const isAssignee =
+        (task.assigneeType === "agent" && task.assigneeId === auth.actorId) ||
+        (task.assigneeType === "user" && auth.ownerId && task.assigneeId === auth.ownerId);
+
+      if (!isAssignee) {
+        return { content: [{ type: "text", text: "只有认领者可以放弃认领" }], isError: true };
+      }
+
+      const updated = await taskService.releaseTask(task.id);
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
+      };
+    }
+  );
+
+  // chorus_update_task - 更新任务状态
+  server.registerTool(
+    "chorus_update_task",
+    {
+      description: "更新任务状态（仅认领者可操作）",
+      inputSchema: z.object({
+        taskUuid: z.string().describe("Task UUID"),
+        status: z.enum(["in_progress", "to_verify"]).describe("新状态"),
+      }),
+    },
+    async ({ taskUuid, status }) => {
+      const task = await taskService.getTaskById(auth.companyId, taskUuid);
+      if (!task) {
+        return { content: [{ type: "text", text: "Task 不存在" }], isError: true };
+      }
+
+      // 检查是否是认领者
+      const isAssignee =
+        (task.assigneeType === "agent" && task.assigneeId === auth.actorId) ||
+        (task.assigneeType === "user" && auth.ownerId && task.assigneeId === auth.ownerId);
+
+      if (!isAssignee) {
+        return { content: [{ type: "text", text: "只有认领者可以更新状态" }], isError: true };
+      }
+
+      // 验证状态转换
+      if (!taskService.isValidTaskStatusTransition(task.status, status)) {
+        return {
+          content: [{ type: "text", text: `无效的状态转换: ${task.status} → ${status}` }],
+          isError: true,
+        };
+      }
+
+      const updated = await taskService.updateTask(task.id, { status });
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
+      };
+    }
+  );
+
+  // chorus_submit_for_verify - 提交任务等待人类验证
+  server.registerTool(
+    "chorus_submit_for_verify",
+    {
+      description: "提交任务等待人类验证（in_progress → to_verify）",
+      inputSchema: z.object({
+        taskUuid: z.string().describe("Task UUID"),
+        summary: z.string().optional().describe("工作摘要"),
+      }),
+    },
+    async ({ taskUuid, summary }) => {
+      const task = await taskService.getTaskById(auth.companyId, taskUuid);
+      if (!task) {
+        return { content: [{ type: "text", text: "Task 不存在" }], isError: true };
+      }
+
+      // 检查是否是认领者
+      const isAssignee =
+        (task.assigneeType === "agent" && task.assigneeId === auth.actorId) ||
+        (task.assigneeType === "user" && auth.ownerId && task.assigneeId === auth.ownerId);
+
+      if (!isAssignee) {
+        return { content: [{ type: "text", text: "只有认领者可以提交验证" }], isError: true };
+      }
+
+      if (task.status !== "in_progress") {
+        return { content: [{ type: "text", text: "只能从 in_progress 状态提交验证" }], isError: true };
+      }
+
+      const updated = await taskService.updateTask(task.id, { status: "to_verify" });
+
+      // 记录活动
+      await activityService.createActivity({
+        companyId: auth.companyId,
+        projectId: task.projectId,
+        actorType: "agent",
+        actorId: auth.actorId,
+        action: "task_submitted_for_verify",
+        taskId: task.id,
+        payload: summary ? { summary } : undefined,
+      });
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(updated, null, 2) }],
+      };
+    }
+  );
+
+  // chorus_report_work - 报告工作完成
+  server.registerTool(
+    "chorus_report_work",
+    {
+      description: "报告工作进展或完成情况",
+      inputSchema: z.object({
+        taskUuid: z.string().describe("Task UUID"),
+        report: z.string().describe("工作报告内容"),
+        status: z.enum(["in_progress", "to_verify"]).optional().describe("可选：同时更新状态"),
+      }),
+    },
+    async ({ taskUuid, report, status }) => {
+      const task = await taskService.getTaskById(auth.companyId, taskUuid);
+      if (!task) {
+        return { content: [{ type: "text", text: "Task 不存在" }], isError: true };
+      }
+
+      // 检查是否是认领者
+      const isAssignee =
+        (task.assigneeType === "agent" && task.assigneeId === auth.actorId) ||
+        (task.assigneeType === "user" && auth.ownerId && task.assigneeId === auth.ownerId);
+
+      if (!isAssignee) {
+        return { content: [{ type: "text", text: "只有认领者可以报告工作" }], isError: true };
+      }
+
+      // 如果需要更新状态
+      if (status && taskService.isValidTaskStatusTransition(task.status, status)) {
+        await taskService.updateTask(task.id, { status });
+      }
+
+      // 记录活动
+      await activityService.createActivity({
+        companyId: auth.companyId,
+        projectId: task.projectId,
+        actorType: "agent",
+        actorId: auth.actorId,
+        action: "task_work_reported",
+        taskId: task.id,
+        payload: { report, statusUpdated: status || null },
+      });
+
+      return {
+        content: [{ type: "text", text: `工作报告已记录: ${report}` }],
+      };
+    }
+  );
+}

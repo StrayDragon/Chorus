@@ -120,130 +120,130 @@ pnpm db:generate
 
 ### 任务清单
 
-#### M1.1 基础设施
+#### M1.1 基础设施 ✅
 > 架构参考: `ARCHITECTURE.md` §3.1 整体架构 - Service Layer
 
-- [ ] 创建 API 响应格式标准
+- [x] 创建 API 响应格式标准
   > 架构参考: `ARCHITECTURE.md` §5.1 REST API
-- [ ] 创建错误处理中间件
-- [ ] 创建 Prisma client 单例
+- [x] 创建错误处理中间件
+- [x] 创建 Prisma client 单例
   > 代码位置: `src/lib/prisma.ts`
   > 架构参考: `ARCHITECTURE.md` §4.0 数据库设计原则
 
-#### M1.2 认证 API
+#### M1.2 认证 API ✅
 > 架构参考: `ARCHITECTURE.md` §6 认证与授权
 
-- [ ] OIDC 配置和回调
+- [x] OIDC 配置和回调（简化版：Session Cookie）
   > PRD 参考: `PRD_Chorus.md` §7.4 认证流程
   > 架构参考: `ARCHITECTURE.md` §6.1 人类认证（OIDC + PKCE）
-- [ ] API Key 验证中间件
+- [x] API Key 验证中间件
   > 架构参考: `ARCHITECTURE.md` §6.2 Agent 认证（API Key）
-- [ ] 获取当前用户/Agent
+- [x] 获取当前用户/Agent
 
-#### M1.3 Projects API
+#### M1.3 Projects API ✅
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - Project
 > 设计参考: `design.pen` - "Chorus - Projects", "Chorus - New Project", "Chorus - Project Overview"
 
-- [ ] GET /api/projects - 项目列表
-- [ ] POST /api/projects - 创建项目
-- [ ] GET /api/projects/[id] - 项目详情
-- [ ] PATCH /api/projects/[id] - 更新项目
-- [ ] DELETE /api/projects/[id] - 删除项目
+- [x] GET /api/projects - 项目列表
+- [x] POST /api/projects - 创建项目
+- [x] GET /api/projects/[id] - 项目详情
+- [x] PATCH /api/projects/[id] - 更新项目
+- [x] DELETE /api/projects/[id] - 删除项目
 
-#### M1.4 Ideas API
+#### M1.4 Ideas API ✅
 > PRD 参考: `PRD_Chorus.md` §4.1 F5 Idea→Proposal→Document/Task 工作流
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - Idea, §7.3 Idea 状态流转
 > 设计参考: `design.pen` - "Chorus - Project Ideas", "Modal - Claim Assignment"
 
-- [ ] GET /api/projects/[id]/ideas - Ideas 列表
-- [ ] POST /api/projects/[id]/ideas - 创建 Idea
-- [ ] GET /api/ideas/[ideaId] - Idea 详情
-- [ ] PATCH /api/ideas/[ideaId] - 更新 Idea
-- [ ] POST /api/ideas/[ideaId]/claim - 认领 Idea
+- [x] GET /api/projects/[id]/ideas - Ideas 列表
+- [x] POST /api/projects/[id]/ideas - 创建 Idea
+- [x] GET /api/ideas/[ideaId] - Idea 详情
+- [x] PATCH /api/ideas/[ideaId] - 更新 Idea
+- [x] POST /api/ideas/[ideaId]/claim - 认领 Idea
   > PRD 参考: `PRD_Chorus.md` §4.1 F5 认领规则、认领方式
   > 架构参考: `ARCHITECTURE.md` §7.3 Idea 状态流转
-- [ ] POST /api/ideas/[ideaId]/release - 放弃认领 Idea
-- [ ] DELETE /api/ideas/[ideaId] - 删除 Idea
+- [x] POST /api/ideas/[ideaId]/release - 放弃认领 Idea
+- [x] DELETE /api/ideas/[ideaId] - 删除 Idea
 
-#### M1.5 Documents API
+#### M1.5 Documents API ✅
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - Document
 > 设计参考: `design.pen` - "Chorus - Documents List", "Chorus - Document Preview"
 
-- [ ] GET /api/projects/[id]/documents - Documents 列表
-- [ ] POST /api/projects/[id]/documents - 创建 Document
-- [ ] GET /api/documents/[docId] - Document 详情
-- [ ] PATCH /api/documents/[docId] - 更新 Document
-- [ ] DELETE /api/documents/[docId] - 删除 Document
+- [x] GET /api/projects/[id]/documents - Documents 列表
+- [x] POST /api/projects/[id]/documents - 创建 Document
+- [x] GET /api/documents/[docId] - Document 详情
+- [x] PATCH /api/documents/[docId] - 更新 Document
+- [x] DELETE /api/documents/[docId] - 删除 Document
 
-#### M1.6 Tasks API
+#### M1.6 Tasks API ✅
 > PRD 参考: `PRD_Chorus.md` §3.3.1 任务系统（六阶段工作流、认领规则）
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - Task, §7.2 任务状态流转
 > 设计参考: `design.pen` - "Chorus - Project Tasks (Kanban)", "Task Detail Panel", "Modal - Claim Task"
 
-- [ ] GET /api/projects/[id]/tasks - Tasks 列表
-- [ ] POST /api/projects/[id]/tasks - 创建 Task
-- [ ] GET /api/tasks/[taskId] - Task 详情
-- [ ] PATCH /api/tasks/[taskId] - 更新 Task（状态、分配）
+- [x] GET /api/projects/[id]/tasks - Tasks 列表
+- [x] POST /api/projects/[id]/tasks - 创建 Task
+- [x] GET /api/tasks/[taskId] - Task 详情
+- [x] PATCH /api/tasks/[taskId] - 更新 Task（状态、分配）
   > PRD 参考: Task 状态流转 open→assigned→in_progress→to_verify→done→closed
   > 架构参考: `ARCHITECTURE.md` §7.2 任务状态流转图
-- [ ] POST /api/tasks/[taskId]/claim - 认领 Task
+- [x] POST /api/tasks/[taskId]/claim - 认领 Task
   > PRD 参考: `PRD_Chorus.md` §3.3.1 认领方式（Agent 自己认领 / Human Assign）
-- [ ] POST /api/tasks/[taskId]/release - 放弃认领 Task
-- [ ] DELETE /api/tasks/[taskId] - 删除 Task
+- [x] POST /api/tasks/[taskId]/release - 放弃认领 Task
+- [x] DELETE /api/tasks/[taskId] - 删除 Task
 
-#### M1.7 Proposals API
+#### M1.7 Proposals API ✅
 > PRD 参考: `PRD_Chorus.md` §4.1 F5 Proposal 的本质（输入→输出模型）
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - Proposal, §7.4 提议审批流程
 > 设计参考: `design.pen` - "Chorus - Project Proposals", "Chorus - Proposal Output (PRD)", "Chorus - Proposal Output (Tasks)", "Chorus - Proposal Output (Document Diff)"
 
-- [ ] GET /api/projects/[id]/proposals - Proposals 列表
-- [ ] POST /api/projects/[id]/proposals - 创建 Proposal（PM 专属）
-- [ ] GET /api/proposals/[propId] - Proposal 详情
-- [ ] POST /api/proposals/[propId]/approve - 审批通过 Proposal（Human 专属）
+- [x] GET /api/projects/[id]/proposals - Proposals 列表
+- [x] POST /api/projects/[id]/proposals - 创建 Proposal（PM 专属）
+- [x] GET /api/proposals/[propId] - Proposal 详情
+- [x] POST /api/proposals/[propId]/approve - 审批通过 Proposal（Human 专属）
   > 架构参考: `ARCHITECTURE.md` §7.4 提议审批流程
-- [ ] POST /api/proposals/[propId]/reject - 拒绝 Proposal（Human 专属）
+- [x] POST /api/proposals/[propId]/reject - 拒绝 Proposal（Human 专属）
 
-#### M1.8 Comments API
+#### M1.8 Comments API ✅
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - Comment（多态关联）
 
-- [ ] GET /api/comments?targetType=&targetId= - 获取评论
-- [ ] POST /api/comments - 添加评论
+- [x] GET /api/comments?targetType=&targetId= - 获取评论
+- [x] POST /api/comments - 添加评论
 
-#### M1.9 Activity API
+#### M1.9 Activity API ✅
 > PRD 参考: `PRD_Chorus.md` §3.3.3 通知与协调
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - Activity
 
-- [ ] GET /api/projects/[id]/activity - 项目活动流
-- [ ] POST /api/activity - 记录活动（内部）
+- [x] GET /api/projects/[id]/activity - 项目活动流
+- [x] POST /api/activity - 记录活动（内部）
 
-#### M1.10 Agents API
+#### M1.10 Agents API ✅
 > PRD 参考: `PRD_Chorus.md` §4.1 F5.5 Agent 管理页面
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - Agent
 > 设计参考: `design.pen` - "Chorus - All Agents"
 
-- [ ] GET /api/agents - Agent 列表
-- [ ] POST /api/agents - 创建 Agent（Human 专属）
-- [ ] GET /api/agents/[id] - Agent 详情
-- [ ] PATCH /api/agents/[id] - 更新 Agent
-- [ ] DELETE /api/agents/[id] - 删除 Agent
+- [x] GET /api/agents - Agent 列表
+- [x] POST /api/agents - 创建 Agent（Human 专属）
+- [x] GET /api/agents/[id] - Agent 详情
+- [x] PATCH /api/agents/[id] - 更新 Agent
+- [x] DELETE /api/agents/[id] - 删除 Agent
 
-#### M1.11 API Keys API
+#### M1.11 API Keys API ✅
 > PRD 参考: `PRD_Chorus.md` §4.1 F5.6 API Key 管理
 > 架构参考: `ARCHITECTURE.md` §4.2 核心实体说明 - ApiKey, §9.1 API Key 安全
 > 设计参考: `design.pen` - "Chorus - Settings", "Modal - Create API Key"
 
-- [ ] GET /api/api-keys - API Key 列表
-- [ ] POST /api/api-keys - 创建 API Key（Human 专属）
+- [x] GET /api/api-keys - API Key 列表
+- [x] POST /api/api-keys - 创建 API Key（Human 专属）
   > 架构参考: `ARCHITECTURE.md` §9.1 API Key 安全 - SHA-256 哈希存储
-- [ ] DELETE /api/api-keys/[id] - 撤销 API Key
+- [x] DELETE /api/api-keys/[id] - 撤销 API Key
 
-#### M1.12 Agent 自助 API
+#### M1.12 Agent 自助 API ✅
 > PRD 参考: `PRD_Chorus.md` §5.4 MCP 工具列表（chorus_get_my_assignments 查询逻辑）
 > 架构参考: `ARCHITECTURE.md` §5.1 REST API - Agent 自助
 
-- [ ] GET /api/me/assignments - 获取自己认领的 Ideas + Tasks
+- [x] GET /api/me/assignments - 获取自己认领的 Ideas + Tasks
   > 查询逻辑: assigneeId=当前Agent **或** assigneeId=当前Agent的Owner（人类分配给自己时）
-- [ ] GET /api/projects/[id]/available - 获取可认领的 Ideas + Tasks（status=open）
+- [x] GET /api/projects/[id]/available - 获取可认领的 Ideas + Tasks（status=open）
 
 ### 交付物
 - 完整的 REST API
@@ -262,67 +262,67 @@ pnpm db:generate
 
 ### 任务清单
 
-#### M2.1 MCP 基础
+#### M2.1 MCP 基础 ✅
 > 架构参考: `ARCHITECTURE.md` §3.2 目录结构 - src/mcp/
 
-- [ ] 安装 @modelcontextprotocol/sdk
-- [ ] 创建 MCP Server 实例
+- [x] 安装 @modelcontextprotocol/sdk
+- [x] 创建 MCP Server 实例
   > 代码位置: `src/mcp/server.ts`
-- [ ] 配置 HTTP Streamable Transport
-- [ ] 创建 /api/mcp 端点
+- [x] 配置 HTTP Streamable Transport（WebStandardStreamableHTTPServerTransport）
+- [x] 创建 /api/mcp 端点
   > 代码位置: `src/app/api/mcp/route.ts`
 
-#### M2.2 公开工具（All Agents）
+#### M2.2 公开工具（All Agents）✅
 > PRD 参考: `PRD_Chorus.md` §5.4 MCP 工具列表 - 读取（公开）
 > 架构参考: `ARCHITECTURE.md` §5.2 MCP API - 公共工具
 
-- [ ] chorus_get_project - 获取项目背景信息
-- [ ] chorus_query_knowledge - 统一查询知识库
-- [ ] chorus_get_ideas - 获取 Ideas 列表
-- [ ] chorus_get_documents - 获取 Documents 列表
-- [ ] chorus_get_document - 获取单个 Document 详情
-- [ ] chorus_get_proposals - 获取提议列表和状态
-- [ ] chorus_get_task - 获取任务详情和上下文
-- [ ] chorus_list_tasks - 列出任务
-- [ ] chorus_get_activity - 获取项目活动流
-- [ ] chorus_add_comment - 评论 Idea/Proposal/Task/Document
-- [ ] chorus_checkin - 心跳签到
+- [x] chorus_get_project - 获取项目背景信息
+- [ ] chorus_query_knowledge - 统一查询知识库（Deferred: 使用单独工具替代）
+- [x] chorus_get_ideas - 获取 Ideas 列表
+- [x] chorus_get_documents - 获取 Documents 列表
+- [x] chorus_get_document - 获取单个 Document 详情
+- [x] chorus_get_proposals - 获取提议列表和状态
+- [x] chorus_get_task - 获取任务详情和上下文
+- [x] chorus_list_tasks - 列出任务
+- [x] chorus_get_activity - 获取项目活动流
+- [x] chorus_add_comment - 评论 Idea/Proposal/Task/Document
+- [x] chorus_checkin - 心跳签到
 
-#### M2.3 自助查询工具（All Agents）
+#### M2.3 自助查询工具（All Agents）✅
 > PRD 参考: `PRD_Chorus.md` §5.4 MCP 工具列表 - 自助查询
 > 架构参考: `ARCHITECTURE.md` §5.2 MCP API - 公共工具
 
-- [ ] chorus_get_my_assignments - 获取自己可操作的 Ideas + Tasks
+- [x] chorus_get_my_assignments - 获取自己可操作的 Ideas + Tasks
   > 查询逻辑: 返回 assigneeType=agent AND assigneeId=当前AgentId **加上** assigneeType=user AND assigneeId=当前Agent的OwnerId
-- [ ] chorus_get_available_ideas - 获取可认领的 Ideas（status=open）
-- [ ] chorus_get_available_tasks - 获取可认领的 Tasks（status=open）
+- [x] chorus_get_available_ideas - 获取可认领的 Ideas（status=open）
+- [x] chorus_get_available_tasks - 获取可认领的 Tasks（status=open）
 
-#### M2.4 PM Agent 专属工具
+#### M2.4 PM Agent 专属工具 ✅
 > PRD 参考: `PRD_Chorus.md` §5.4 MCP 工具列表 - PM 专属
 > 架构参考: `ARCHITECTURE.md` §5.2 MCP API - PM Agent 工具
 
-- [ ] chorus_pm_create_proposal - 创建提议（PRD/任务拆分/技术方案）
-- [ ] chorus_claim_idea - 认领 Idea（open → assigned）
-- [ ] chorus_release_idea - 放弃认领 Idea（assigned → open）
-- [ ] chorus_update_idea_status - 更新 Idea 状态（仅认领者）
+- [x] chorus_pm_create_proposal - 创建提议（PRD/任务拆分/技术方案）
+- [x] chorus_claim_idea - 认领 Idea（open → assigned）
+- [x] chorus_release_idea - 放弃认领 Idea（assigned → open）
+- [x] chorus_update_idea_status - 更新 Idea 状态（仅认领者）
 
-#### M2.5 Developer Agent 专属工具
+#### M2.5 Developer Agent 专属工具 ✅
 > PRD 参考: `PRD_Chorus.md` §5.4 MCP 工具列表 - Developer 专属
 > 架构参考: `ARCHITECTURE.md` §5.2 MCP API - Developer Agent 工具
 
-- [ ] chorus_claim_task - 认领 Task（open → assigned）
-- [ ] chorus_release_task - 放弃认领 Task（assigned → open）
-- [ ] chorus_update_task - 更新任务状态（仅认领者）
-- [ ] chorus_submit_for_verify - 提交任务等待人类验证
-- [ ] chorus_report_work - 报告工作完成
+- [x] chorus_claim_task - 认领 Task（open → assigned）
+- [x] chorus_release_task - 放弃认领 Task（assigned → open）
+- [x] chorus_update_task - 更新任务状态（仅认领者）
+- [x] chorus_submit_for_verify - 提交任务等待人类验证
+- [x] chorus_report_work - 报告工作完成
 
-#### M2.6 权限验证
+#### M2.6 权限验证 ✅
 > 架构参考: `ARCHITECTURE.md` §6.3 权限模型
 
-- [ ] API Key 解析
-- [ ] 角色验证（PM/Developer）
-- [ ] 权限检查中间件
-  > 代码位置: `src/mcp/middleware.ts`
+- [x] API Key 解析
+- [x] 角色验证（PM/Developer）
+- [x] 权限检查中间件（内置于 createMcpServer）
+  > 代码位置: `src/mcp/server.ts` (角色基础工具注册)
 
 ### 交付物
 - 可用的 MCP Server
