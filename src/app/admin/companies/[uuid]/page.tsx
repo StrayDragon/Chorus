@@ -14,6 +14,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Building2,
+  Users,
+  Bot,
+  FolderKanban,
+  ArrowLeft,
+  Trash2,
+  Key,
+} from "lucide-react";
 
 interface CompanyDetail {
   uuid: string;
@@ -47,7 +56,6 @@ export default function CompanyDetailPage({
   const [emailDomains, setEmailDomains] = useState("");
   const [oidcIssuer, setOidcIssuer] = useState("");
   const [oidcClientId, setOidcClientId] = useState("");
-  const [oidcEnabled, setOidcEnabled] = useState(false);
 
   useEffect(() => {
     fetchCompany();
@@ -65,7 +73,6 @@ export default function CompanyDetailPage({
         setEmailDomains(c.emailDomains.join(", "));
         setOidcIssuer(c.oidcIssuer || "");
         setOidcClientId(c.oidcClientId || "");
-        setOidcEnabled(c.oidcEnabled);
       } else {
         setError(data.error?.message || "Company not found");
       }
@@ -88,6 +95,9 @@ export default function CompanyDetailPage({
         .split(",")
         .map((d) => d.trim())
         .filter((d) => d.length > 0);
+
+      // OIDC is enabled if both issuer and clientId are provided
+      const oidcEnabled = !!(oidcIssuer.trim() && oidcClientId.trim());
 
       const response = await fetch(`/api/admin/companies/${uuid}`, {
         method: "PATCH",
@@ -144,7 +154,7 @@ export default function CompanyDetailPage({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex min-h-full items-center justify-center bg-background">
         <div className="text-muted-foreground">Loading...</div>
       </div>
     );
@@ -152,27 +162,16 @@ export default function CompanyDetailPage({
 
   if (!company) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
+      <div className="min-h-full bg-background px-8 py-6">
+        <div className="mb-6">
           <Link href="/admin/companies">
             <Button variant="ghost" size="sm">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2 h-4 w-4"
-              >
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              Back
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Companies
             </Button>
           </Link>
         </div>
-        <div className="rounded-md bg-destructive/10 p-4 text-destructive">
+        <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive">
           {error || "Company not found"}
         </div>
       </div>
@@ -180,80 +179,93 @@ export default function CompanyDetailPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-full bg-background px-8 py-6">
+      {/* Back Link */}
+      <div className="mb-6">
+        <Link href="/admin/companies">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Companies
+          </Button>
+        </Link>
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/admin/companies">
-            <Button variant="ghost" size="sm">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2 h-4 w-4"
-              >
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              Back
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold">{company.name}</h1>
-            <p className="text-muted-foreground">
-              Created {new Date(company.createdAt).toLocaleDateString()}
-            </p>
-          </div>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">
+            {company.name}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Created {new Date(company.createdAt).toLocaleDateString()}
+          </p>
         </div>
         <Button variant="destructive" onClick={handleDelete}>
+          <Trash2 className="mr-2 h-4 w-4" />
           Delete Company
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Stats Cards */}
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Users</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Users
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{company.userCount}</div>
+            <div className="text-2xl font-semibold">{company.userCount}</div>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Agents</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Agents
+              </CardTitle>
+              <Bot className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{company.agentCount}</div>
+            <div className="text-2xl font-semibold">{company.agentCount}</div>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Projects</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Projects
+              </CardTitle>
+              <FolderKanban className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{company.projectCount}</div>
+            <div className="text-2xl font-semibold">{company.projectCount}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Info */}
+        {/* Basic Information */}
         <Card>
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-            <CardDescription>
-              Update the company name and email domains
-            </CardDescription>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              <CardTitle className="text-sm font-medium">
+                Basic Information
+              </CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Company Name *</Label>
+              <Label htmlFor="name">Company Name</Label>
               <Input
                 id="name"
                 value={name}
@@ -272,54 +284,48 @@ export default function CompanyDetailPage({
                 placeholder="acme.com, acme.org"
                 disabled={saving}
               />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Comma-separated list of email domains
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* OIDC Config */}
+        {/* OIDC Configuration */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>OIDC Configuration</CardTitle>
-                <CardDescription>
-                  Configure OpenID Connect for user authentication
-                </CardDescription>
+              <div className="flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                <CardTitle className="text-sm font-medium">
+                  OIDC Configuration
+                </CardTitle>
               </div>
-              {oidcEnabled ? (
+              {company.oidcEnabled ? (
                 <Badge variant="success">Enabled</Badge>
               ) : (
-                <Badge variant="warning">Disabled</Badge>
+                <Badge variant="warning">Not configured</Badge>
               )}
             </div>
+            <CardDescription>
+              Configure OpenID Connect (PKCE) for single sign-on authentication.
+              OIDC will be enabled when both Issuer URL and Client ID are
+              provided.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="oidcEnabled"
-                checked={oidcEnabled}
-                onChange={(e) => setOidcEnabled(e.target.checked)}
-                disabled={saving}
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor="oidcEnabled">Enable OIDC Authentication</Label>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="oidcIssuer">OIDC Issuer URL</Label>
               <Input
                 id="oidcIssuer"
+                type="url"
                 value={oidcIssuer}
                 onChange={(e) => setOidcIssuer(e.target.value)}
-                placeholder="https://auth.example.com"
-                disabled={saving || !oidcEnabled}
+                placeholder="https://login.microsoftonline.com/tenant-id/v2.0"
+                disabled={saving}
               />
-              <p className="text-sm text-muted-foreground">
-                The OIDC provider&apos;s issuer URL (e.g., Auth0, Okta, Google)
+              <p className="text-xs text-muted-foreground">
+                The OpenID Connect discovery endpoint URL
               </p>
             </div>
 
@@ -329,11 +335,11 @@ export default function CompanyDetailPage({
                 id="oidcClientId"
                 value={oidcClientId}
                 onChange={(e) => setOidcClientId(e.target.value)}
-                placeholder="your-client-id"
-                disabled={saving || !oidcEnabled}
+                placeholder="e.g., 12345678-abcd-efgh-ijkl-123456789012"
+                disabled={saving}
               />
-              <p className="text-sm text-muted-foreground">
-                The OAuth 2.0 Client ID from your OIDC provider (PKCE mode, no secret needed)
+              <p className="text-xs text-muted-foreground">
+                The OAuth 2.0 Client ID (PKCE mode, no secret needed)
               </p>
             </div>
           </CardContent>
@@ -341,18 +347,18 @@ export default function CompanyDetailPage({
 
         {/* Messages */}
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </div>
         )}
         {success && (
-          <div className="rounded-md bg-green-100 p-3 text-sm text-green-800 dark:bg-green-900 dark:text-green-100">
+          <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600">
             {success}
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-4">
+        {/* Action Bar */}
+        <div className="flex items-center gap-3">
           <Button type="submit" disabled={saving}>
             {saving ? "Saving..." : "Save Changes"}
           </Button>

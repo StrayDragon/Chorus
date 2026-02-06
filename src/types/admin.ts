@@ -23,6 +23,8 @@ export interface CompanyDetail extends CompanyListItem {
 export interface CompanyCreateInput {
   name: string;
   emailDomains?: string[];
+  oidcIssuer?: string;
+  oidcClientId?: string;
 }
 
 // Company 更新输入

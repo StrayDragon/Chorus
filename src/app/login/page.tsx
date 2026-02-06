@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createUserManager, storeOidcConfig, type OidcConfig } from "@/lib/oidc";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,14 +34,29 @@ export default function LoginPage() {
       if (result.type === "super_admin") {
         router.push(`/login/admin?email=${encodeURIComponent(email)}`);
       } else if (result.type === "oidc" && result.company) {
-        // TODO: 实现 OIDC 重定向
-        setError(
-          `OIDC login for ${result.company.name} is not yet implemented`
-        );
+        // Store OIDC config for callback use
+        const oidcConfig: OidcConfig = {
+          issuer: result.company.oidcIssuer,
+          clientId: result.company.oidcClientId,
+          companyUuid: result.company.uuid,
+          companyName: result.company.name,
+        };
+        storeOidcConfig(oidcConfig);
+
+        // Create UserManager and initiate login
+        const userManager = createUserManager(oidcConfig);
+
+        // Redirect to OIDC provider
+        await userManager.signinRedirect({
+          extraQueryParams: {
+            login_hint: email,
+          },
+        });
       } else {
         setError(result.message || "No organization found for this email");
       }
-    } catch {
+    } catch (err) {
+      console.error("Login error:", err);
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);

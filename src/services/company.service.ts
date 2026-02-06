@@ -93,15 +93,23 @@ export async function createCompany(data: CompanyCreateInput) {
   // 处理邮箱域名（转小写）
   const emailDomains = (data.emailDomains || []).map((d) => d.toLowerCase());
 
+  // 判断 OIDC 是否启用（需要 issuer 和 clientId）
+  const oidcEnabled = !!(data.oidcIssuer && data.oidcClientId);
+
   return prisma.company.create({
     data: {
       name: data.name,
       emailDomains,
+      oidcIssuer: data.oidcIssuer || null,
+      oidcClientId: data.oidcClientId || null,
+      oidcEnabled,
     },
     select: {
       uuid: true,
       name: true,
       emailDomains: true,
+      oidcIssuer: true,
+      oidcClientId: true,
       oidcEnabled: true,
       createdAt: true,
       updatedAt: true,

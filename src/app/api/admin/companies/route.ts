@@ -52,15 +52,27 @@ export const POST = withErrorHandler(
       }
     }
 
+    // 验证 OIDC 配置（必须同时提供 issuer 和 clientId）
+    if (body.oidcIssuer && !body.oidcClientId) {
+      return errors.validationError({ oidcClientId: "Client ID is required when OIDC Issuer is provided" });
+    }
+    if (body.oidcClientId && !body.oidcIssuer) {
+      return errors.validationError({ oidcIssuer: "OIDC Issuer is required when Client ID is provided" });
+    }
+
     const company = await companyService.createCompany({
       name: body.name.trim(),
       emailDomains: body.emailDomains,
+      oidcIssuer: body.oidcIssuer?.trim(),
+      oidcClientId: body.oidcClientId?.trim(),
     });
 
     return success({
       uuid: company.uuid,
       name: company.name,
       emailDomains: company.emailDomains,
+      oidcIssuer: company.oidcIssuer,
+      oidcClientId: company.oidcClientId,
       oidcEnabled: company.oidcEnabled,
       userCount: 0,
       agentCount: 0,

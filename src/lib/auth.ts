@@ -12,33 +12,48 @@ import type {
   AgentRole,
 } from "@/types/auth";
 import { getSuperAdminFromRequest } from "./super-admin";
+import { getUserSessionFromRequest } from "./user-session";
 
 // 从请求获取认证上下文
 export async function getAuthContext(
   request: NextRequest
 ): Promise<AuthContext | null> {
-  // 尝试 API Key 认证（Agent）
   const authHeader = request.headers.get("authorization");
-  const apiKey = extractApiKey(authHeader);
 
-  if (apiKey) {
-    const result = await validateApiKey(apiKey);
-    if (result.valid && result.agent) {
-      const agentContext: AgentAuthContext = {
-        type: "agent",
-        companyId: result.agent.companyId,
-        actorId: result.agent.id,
-        uuid: result.agent.uuid,
-        roles: result.agent.roles as AgentRole[],
-        ownerId: result.agent.ownerId ?? undefined,
-        agentName: result.agent.name,
-      };
-      return agentContext;
+  // 1. 尝试 Bearer Token 认证
+  if (authHeader?.toLowerCase().startsWith("bearer ")) {
+    // 1a. 先尝试 User JWT Token (Bearer token 格式)
+    const userSession = await getUserSessionFromRequest(request);
+    if (userSession) {
+      return userSession;
+    }
+
+    // 1b. 尝试 API Key 认证（Agent）- API Key 也是 Bearer 格式
+    const apiKey = extractApiKey(authHeader);
+    if (apiKey) {
+      const result = await validateApiKey(apiKey);
+      if (result.valid && result.agent) {
+        const agentContext: AgentAuthContext = {
+          type: "agent",
+          companyId: result.agent.companyId,
+          actorId: result.agent.id,
+          uuid: result.agent.uuid,
+          roles: result.agent.roles as AgentRole[],
+          ownerId: result.agent.ownerId ?? undefined,
+          agentName: result.agent.name,
+        };
+        return agentContext;
+      }
     }
   }
 
-  // TODO: 尝试 Session 认证（User）
-  // 在 MVP 阶段，暂时使用 Header 模拟用户认证
+  // 2. 尝试 Session Cookie 认证（User）- 无 Authorization header 时
+  const userSession = await getUserSessionFromRequest(request);
+  if (userSession) {
+    return userSession;
+  }
+
+  // 3. Fallback: Header 模拟用户认证（开发用）
   const userIdHeader = request.headers.get("x-user-id");
   const companyIdHeader = request.headers.get("x-company-id");
 
