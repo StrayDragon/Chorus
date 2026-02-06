@@ -1,6 +1,6 @@
 # Project Chorus - 技术架构文档
 
-**版本**: 1.6
+**版本**: 1.7
 **更新日期**: 2026-02-06
 
 ---
@@ -96,8 +96,9 @@ Chorus 是一个 AI Agent 与人类协作的平台，实现 AI-DLC（AI-Driven D
 │  │  - Request Logging                                       │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────┐  ┌─────────────────────────────────┐   │
-│  │   React Pages       │  │        API Routes               │   │
-│  │   (App Router)      │  │                                 │   │
+│  │ Server Components   │  │        API Routes               │   │
+│  │ + Server Actions    │  │      (Agent 专用)               │   │
+│  │   (Human 前端)      │  │                                 │   │
 │  │                     │  │  /api/projects/*                │   │
 │  │  - Dashboard        │  │  /api/ideas/*                   │   │
 │  │  - Project Overview │  │  /api/documents/*               │   │
@@ -234,7 +235,162 @@ export async function listProjects({ companyUuid, skip, take }) {
 }
 ```
 
-### 3.3 目录结构
+### 3.3 前端架构：Server Components + Server Actions
+
+Chorus 采用 Next.js 15 的 React Server Components (RSC) 和 Server Actions 架构，最大化服务端渲染和减少客户端 JavaScript。
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Server Components (页面层)                     │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  职责:                                                    │   │
+│  │  - 服务端数据获取（直接调用 Service 层）                    │   │
+│  │  - 服务端认证检查（getServerAuthContext）                  │   │
+│  │  - 服务端渲染 HTML                                        │   │
+│  │  - 传递数据给 Client Components                           │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│  代码位置: src/app/(dashboard)/**/page.tsx                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────┐
+│ Client Components│  │ Server Actions  │  │   Service Layer         │
+│ (交互组件)        │  │ (数据变更)      │  │   (直接调用)             │
+│                  │  │                 │  │                         │
+│ *-actions.tsx    │  │ actions.ts      │  │ *.service.ts            │
+│ *-form.tsx       │  │                 │  │                         │
+│ 使用 useTransition│  │ "use server"    │  │                         │
+└────────┬─────────┘  └────────┬────────┘  └─────────────────────────┘
+         │                     │
+         └──────────┬──────────┘
+                    │
+                    ▼
+         ┌─────────────────────┐
+         │   Prisma Client     │
+         └─────────────────────┘
+```
+
+#### 数据流模式
+
+**读取数据（Server Components）**：
+```
+URL 请求 → Server Component → Service Layer → Prisma → 渲染 HTML
+```
+
+**写入数据（Server Actions）**：
+```
+用户操作 → Client Component → Server Action → Service Layer → Prisma → revalidatePath
+```
+
+#### 文件组织模式
+
+每个功能页面采用以下文件结构：
+
+```
+projects/[uuid]/tasks/[taskUuid]/
+├── page.tsx           # Server Component（数据获取 + 渲染）
+├── actions.ts         # Server Actions（数据变更）
+├── task-actions.tsx   # Client Component（交互按钮）
+└── task-form.tsx      # Client Component（表单）
+```
+
+#### 代码示例
+
+**Server Component (page.tsx)**:
+```typescript
+// 服务端组件：直接调用 Service 获取数据
+import { getServerAuthContext } from "@/lib/auth-server";
+import { getTask } from "@/services/task.service";
+import { TaskActions } from "./task-actions";
+
+export default async function TaskPage({ params }: PageProps) {
+  const auth = await getServerAuthContext();
+  if (!auth) redirect("/login");
+
+  const { taskUuid } = await params;
+  const task = await getTask(auth.companyUuid, taskUuid);
+
+  return (
+    <div>
+      <h1>{task.title}</h1>
+      <TaskActions taskUuid={taskUuid} status={task.status} />
+    </div>
+  );
+}
+```
+
+**Server Action (actions.ts)**:
+```typescript
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { getServerAuthContext } from "@/lib/auth-server";
+import { claimTask } from "@/services/task.service";
+
+export async function claimTaskAction(taskUuid: string) {
+  const auth = await getServerAuthContext();
+  if (!auth) redirect("/login");
+
+  await claimTask({
+    taskUuid,
+    companyUuid: auth.companyUuid,
+    assigneeType: auth.type,
+    assigneeUuid: auth.actorUuid,
+  });
+
+  revalidatePath(`/projects`);
+  return { success: true };
+}
+```
+
+**Client Component (task-actions.tsx)**:
+```typescript
+"use client";
+
+import { useTransition } from "react";
+import { claimTaskAction } from "./actions";
+
+export function TaskActions({ taskUuid, status }: Props) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleClaim = () => {
+    startTransition(async () => {
+      await claimTaskAction(taskUuid);
+    });
+  };
+
+  return (
+    <Button onClick={handleClaim} disabled={isPending}>
+      {isPending ? "Processing..." : "Claim Task"}
+    </Button>
+  );
+}
+```
+
+#### 架构优势
+
+| 优势 | 说明 |
+|-----|------|
+| **安全性** | 认证和数据库操作都在服务端，不暴露给客户端 |
+| **性能** | 减少客户端 JavaScript，首屏渲染更快 |
+| **简化代码** | 无需 API 路由中间层，Server Action 直接调用 Service |
+| **类型安全** | 端到端 TypeScript，编译时检查参数 |
+| **缓存控制** | `revalidatePath` 精确控制缓存失效 |
+
+#### 保留 Client-Side 认证的场景
+
+以下场景仍使用 `authFetch`（客户端认证）：
+
+| 文件 | 用途 |
+|-----|------|
+| `layout.tsx` | Dashboard 布局的会话检查 |
+| `auth-context.tsx` | 全局认证状态 Provider |
+| `auth-client.ts` | authFetch 工具库 |
+
+这些是认证基础设施，需要在客户端维护会话状态。
+
+### 3.4 目录结构
 
 ```
 chorus/
@@ -269,21 +425,46 @@ chorus/
 │   │   │       └── [id]/page.tsx  # Company 详情/OIDC 配置
 │   │   │
 │   │   ├── projects/
-│   │   │   ├── page.tsx        # 项目列表
-│   │   │   └── [id]/
-│   │   │       ├── page.tsx    # 项目 Overview
-│   │   │       ├── ideas/page.tsx      # Ideas 列表
-│   │   │       ├── documents/page.tsx  # Documents 列表
-│   │   │       ├── tasks/page.tsx      # Kanban 看板
-│   │   │       ├── knowledge/page.tsx  # 知识库查询
-│   │   │       ├── proposals/page.tsx  # 提议列表
-│   │   │       └── activity/page.tsx   # 活动流
+│   │   │   ├── page.tsx        # 项目列表 (Server Component)
+│   │   │   ├── new/
+│   │   │   │   ├── page.tsx    # 创建项目表单 (Client Component)
+│   │   │   │   └── actions.ts  # 创建项目 Server Actions
+│   │   │   └── [uuid]/
+│   │   │       ├── page.tsx    # 项目 Overview (Server Component)
+│   │   │       ├── ideas/
+│   │   │       │   ├── page.tsx           # Ideas 列表 (Server Component)
+│   │   │       │   └── [ideaUuid]/
+│   │   │       │       ├── page.tsx       # Idea 详情 (Server Component)
+│   │   │       │       ├── actions.ts     # Idea Server Actions
+│   │   │       │       └── idea-actions.tsx # 交互按钮 (Client Component)
+│   │   │       ├── documents/
+│   │   │       │   ├── page.tsx           # Documents 列表 (Server Component)
+│   │   │       │   └── [documentUuid]/
+│   │   │       │       ├── page.tsx       # Document 详情 (Server Component)
+│   │   │       │       ├── actions.ts     # Document Server Actions
+│   │   │       │       ├── document-actions.tsx
+│   │   │       │       └── document-content.tsx
+│   │   │       ├── tasks/
+│   │   │       │   ├── page.tsx           # Kanban 看板 (Server Component)
+│   │   │       │   └── [taskUuid]/
+│   │   │       │       ├── page.tsx       # Task 详情 (Server Component)
+│   │   │       │       ├── actions.ts     # Task Server Actions
+│   │   │       │       ├── task-actions.tsx
+│   │   │       │       └── task-status-progress.tsx
+│   │   │       ├── proposals/
+│   │   │       │   ├── page.tsx           # 提议列表 (Server Component)
+│   │   │       │   └── [proposalUuid]/
+│   │   │       │       ├── page.tsx       # Proposal 详情 (Server Component)
+│   │   │       │       ├── actions.ts     # Proposal Server Actions
+│   │   │       │       └── proposal-actions.tsx
+│   │   │       ├── knowledge/page.tsx     # 知识库查询
+│   │   │       └── activity/page.tsx      # 活动流 (Server Component)
 │   │   │
-│   │   ├── agents/
-│   │   │   ├── page.tsx        # Agent 管理
-│   │   │   └── [id]/page.tsx   # Agent 详情/Key 管理
+│   │   ├── settings/
+│   │   │   ├── page.tsx        # 设置页面 (Client Component + Server Actions)
+│   │   │   └── actions.ts      # API Key 管理 Server Actions
 │   │   │
-│   │   └── api/                # API Routes
+│   │   └── api/                # API Routes (Agent 访问用)
 │   │       ├── auth/
 │   │       │   ├── login/route.ts        # 邮箱识别登录
 │   │       │   ├── callback/route.ts     # OIDC 回调

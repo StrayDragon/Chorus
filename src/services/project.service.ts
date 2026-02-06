@@ -124,3 +124,53 @@ export async function updateProject(uuid: string, data: ProjectUpdateParams) {
 export async function deleteProject(uuid: string) {
   return prisma.project.delete({ where: { uuid } });
 }
+
+// 获取项目统计数据（用于 Dashboard）
+export async function getProjectStats(companyUuid: string, projectUuid: string) {
+  const [ideasStats, tasksStats, proposalsStats, documentsCount] = await Promise.all([
+    // Ideas 统计
+    prisma.idea.groupBy({
+      by: ["status"],
+      where: { projectUuid, companyUuid },
+      _count: true,
+    }),
+    // Tasks 统计
+    prisma.task.groupBy({
+      by: ["status"],
+      where: { projectUuid, companyUuid },
+      _count: true,
+    }),
+    // Proposals 统计
+    prisma.proposal.groupBy({
+      by: ["status"],
+      where: { projectUuid, companyUuid },
+      _count: true,
+    }),
+    // Documents 总数
+    prisma.document.count({
+      where: { projectUuid, companyUuid },
+    }),
+  ]);
+
+  // 解析 Ideas 统计
+  const ideaStatusMap = new Map(ideasStats.map((s) => [s.status, s._count]));
+  const ideasTotal = ideasStats.reduce((sum, s) => sum + s._count, 0);
+  const ideasOpen = ideaStatusMap.get("open") || 0;
+
+  // 解析 Tasks 统计
+  const taskStatusMap = new Map(tasksStats.map((s) => [s.status, s._count]));
+  const tasksTotal = tasksStats.reduce((sum, s) => sum + s._count, 0);
+  const tasksInProgress = taskStatusMap.get("in_progress") || 0;
+
+  // 解析 Proposals 统计
+  const proposalStatusMap = new Map(proposalsStats.map((s) => [s.status, s._count]));
+  const proposalsTotal = proposalsStats.reduce((sum, s) => sum + s._count, 0);
+  const proposalsPending = proposalStatusMap.get("pending") || 0;
+
+  return {
+    ideas: { total: ideasTotal, open: ideasOpen },
+    tasks: { total: tasksTotal, inProgress: tasksInProgress },
+    proposals: { total: proposalsTotal, pending: proposalsPending },
+    documents: { total: documentsCount },
+  };
+}

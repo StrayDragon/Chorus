@@ -117,6 +117,13 @@ export async function login(): Promise<void> {
 
 // Logout
 export async function logout(): Promise<void> {
+  // Clear HTTP-only cookie first
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch {
+    // Ignore errors, continue with logout
+  }
+
   const manager = getUserManager();
   if (manager) {
     try {

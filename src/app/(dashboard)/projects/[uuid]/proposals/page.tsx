@@ -1,21 +1,15 @@
-"use client";
+// src/app/(dashboard)/projects/[uuid]/proposals/page.tsx
+// Server Component - UUID 从 URL 获取
 
-import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { authFetch } from "@/lib/auth-client";
-
-interface Proposal {
-  uuid: string;
-  title: string;
-  proposalType: string;
-  status: string;
-  createdAt: string;
-  creatorName?: string;
-}
+import { getServerAuthContext } from "@/lib/auth-server";
+import { listProposals } from "@/services/proposal.service";
+import { projectExists } from "@/services/project.service";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending Review", color: "bg-[#FFF3E0] text-[#E65100]" },
@@ -31,59 +25,45 @@ const typeConfig: Record<string, { label: string; icon: string }> = {
   tech_spec: { label: "Tech Spec", icon: "⚙️" },
 };
 
-export default function ProposalsPage() {
-  const t = useTranslations();
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+interface PageProps {
+  params: Promise<{ uuid: string }>;
+  searchParams: Promise<{ status?: string }>;
+}
 
-  useEffect(() => {
-    fetchProposals();
-  }, []);
+export default async function ProposalsPage({ params, searchParams }: PageProps) {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
+  }
 
-  const getCurrentProjectUuid = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("currentProjectUuid");
-    }
-    return null;
-  };
+  const { uuid: projectUuid } = await params;
+  const { status: filter = "all" } = await searchParams;
+  const t = await getTranslations();
 
-  const fetchProposals = async () => {
-    const projectUuid = getCurrentProjectUuid();
-    if (!projectUuid) {
-      setLoading(false);
-      return;
-    }
+  // 验证项目存在
+  const exists = await projectExists(auth.companyUuid, projectUuid);
+  if (!exists) {
+    redirect("/projects");
+  }
 
-    try {
-      const response = await authFetch(`/api/projects/${projectUuid}/proposals`);
-      const data = await response.json();
-      if (data.success) {
-        setProposals(data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch proposals:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 获取所有 Proposals
+  const { proposals: allProposals } = await listProposals({
+    companyUuid: auth.companyUuid,
+    projectUuid,
+    skip: 0,
+    take: 1000,
+  });
 
-  const filteredProposals = filter === "all"
-    ? proposals
-    : proposals.filter((p) => p.status === filter);
-
-  const statusCounts = proposals.reduce((acc, p) => {
+  // 计算各状态数量
+  const statusCounts = allProposals.reduce((acc, p) => {
     acc[p.status] = (acc[p.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-[#6B6B6B]">{t("proposals.loadingProposals")}</div>
-      </div>
-    );
-  }
+  // 根据 filter 过滤
+  const filteredProposals = filter === "all"
+    ? allProposals
+    : allProposals.filter((p) => p.status === filter);
 
   return (
     <div className="p-8">
@@ -118,25 +98,20 @@ export default function ProposalsPage() {
 
       {/* Filter Tabs */}
       <div className="mb-6 flex gap-2 border-b border-border pb-4">
-        <Button
-          variant={filter === "all" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setFilter("all")}
-        >
-          {t("proposals.all")} ({proposals.length})
-        </Button>
+        <Link href={`/projects/${projectUuid}/proposals`}>
+          <Button variant={filter === "all" ? "default" : "ghost"} size="sm">
+            {t("proposals.all")} ({allProposals.length})
+          </Button>
+        </Link>
         {Object.entries(statusConfig).map(([status, config]) => {
           const count = statusCounts[status] || 0;
           if (count === 0 && status !== "pending") return null;
           return (
-            <Button
-              key={status}
-              variant={filter === status ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setFilter(status)}
-            >
-              {config.label} ({count})
-            </Button>
+            <Link key={status} href={`/projects/${projectUuid}/proposals?status=${status}`}>
+              <Button variant={filter === status ? "default" : "ghost"} size="sm">
+                {config.label} ({count})
+              </Button>
+            </Link>
           );
         })}
       </div>
@@ -171,12 +146,12 @@ export default function ProposalsPage() {
       ) : (
         <div className="space-y-3">
           {filteredProposals.map((proposal) => (
-            <Link key={proposal.uuid} href={`/proposals/${proposal.uuid}`}>
+            <Link key={proposal.uuid} href={`/projects/${projectUuid}/proposals/${proposal.uuid}`}>
               <Card className="group cursor-pointer border-[#E5E0D8] p-5 transition-all hover:border-[#C67A52] hover:shadow-sm">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC] text-2xl">
-                      {typeConfig[proposal.proposalType]?.icon || "📋"}
+                      {typeConfig[proposal.outputType]?.icon || "📋"}
                     </div>
                     <div>
                       <div className="mb-1 flex items-center gap-2">
@@ -188,60 +163,14 @@ export default function ProposalsPage() {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-[#6B6B6B]">
-                        <span>{typeConfig[proposal.proposalType]?.label || proposal.proposalType}</span>
+                        <span>{typeConfig[proposal.outputType]?.label || proposal.outputType}</span>
                         <span>·</span>
                         <span>
                           {new Date(proposal.createdAt).toLocaleDateString()}
                         </span>
-                        {proposal.creatorName && (
-                          <>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="h-3 w-3"
-                              >
-                                <path d="M12 8V4H8" />
-                                <rect width="16" height="12" x="4" y="8" rx="2" />
-                              </svg>
-                              {proposal.creatorName}
-                            </span>
-                          </>
-                        )}
                       </div>
                     </div>
                   </div>
-                  {proposal.status === "pending" && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-[#D32F2F] text-[#D32F2F] hover:bg-[#FFEBEE]"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          // TODO: Reject
-                        }}
-                      >
-                        {t("common.reject")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="bg-[#5A9E6F] hover:bg-[#4A8E5F] text-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          // TODO: Approve
-                        }}
-                      >
-                        {t("common.approve")}
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </Card>
             </Link>

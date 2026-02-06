@@ -60,7 +60,7 @@ export default function OidcCallbackPage() {
       // Extract user info from OIDC response
       const userInfo = extractUserInfo(user);
 
-      // Register user in backend (just creates user record, no JWT)
+      // Register user in backend and store access token in HTTP-only cookie
       const response = await fetch("/api/auth/callback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,6 +69,7 @@ export default function OidcCallbackPage() {
           oidcSub: userInfo.sub,
           email: userInfo.email,
           name: userInfo.name,
+          accessToken: user.access_token, // Send token to be stored in HTTP-only cookie
         }),
       });
 

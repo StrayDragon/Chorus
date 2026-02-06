@@ -33,7 +33,8 @@
     "saving": "保存中...",
     "claim": "认领",
     "reject": "拒绝",
-    "approve": "批准"
+    "approve": "批准",
+    "selectProject": "请先选择一个项目"
   },
   "time": {
     "justNow": "刚刚",

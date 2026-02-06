@@ -1,75 +1,49 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+// Server Component - 数据在服务端获取，零客户端 JS
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { authFetch } from "@/lib/auth-client";
+import { getServerAuthContext } from "@/lib/auth-server";
+import { listProjects } from "@/services/project.service";
 
-interface Project {
-  uuid: string;
-  name: string;
-  description: string | null;
-  status: string;
-  createdAt: string;
-  _count?: {
-    ideas: number;
-    tasks: number;
-    documents: number;
-  };
-}
-
-export default function ProjectsPage() {
-  const t = useTranslations();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    try {
-      const response = await authFetch("/api/projects");
-      const data = await response.json();
-      if (data.success) {
-        setProjects(data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch projects:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-[#E8F5E9] text-[#5A9E6F]";
-      case "archived":
-        return "bg-[#F5F5F5] text-[#9A9A9A]";
-      case "completed":
-        return "bg-[#E3F2FD] text-[#1976D2]";
-      default:
-        return "bg-[#F5F2EC] text-[#6B6B6B]";
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-[#6B6B6B]">{t("projects.loadingProjects")}</div>
-      </div>
-    );
+export default async function ProjectsPage() {
+  // 服务端认证
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
   }
+
+  // 服务端获取翻译
+  const t = await getTranslations();
+
+  // 调用 Service 层获取数据
+  const { projects } = await listProjects({
+    companyUuid: auth.companyUuid,
+    skip: 0,
+    take: 100,
+  });
+
+  // 转换数据格式
+  const projectList = projects.map((p) => ({
+    uuid: p.uuid,
+    name: p.name,
+    description: p.description,
+    counts: {
+      ideas: p._count.ideas,
+      tasks: p._count.tasks,
+      documents: p._count.documents,
+    },
+  }));
 
   return (
     <div className="p-8">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#2C2C2C]">{t("projects.title")}</h1>
+          <h1 className="text-2xl font-semibold text-[#2C2C2C]">
+            {t("projects.title")}
+          </h1>
           <p className="mt-1 text-sm text-[#6B6B6B]">
             {t("projects.subtitle")}
           </p>
@@ -95,7 +69,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* Projects Grid */}
-      {projects.length === 0 ? (
+      {projectList.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center border-[#E5E0D8]">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#F5F2EC]">
             <svg
@@ -127,7 +101,7 @@ export default function ProjectsPage() {
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
+          {projectList.map((project) => (
             <Link key={project.uuid} href={`/projects/${project.uuid}`}>
               <Card className="group cursor-pointer border-[#E5E0D8] p-5 transition-all hover:border-[#C67A52] hover:shadow-md">
                 <div className="mb-3 flex items-start justify-between">
@@ -145,11 +119,6 @@ export default function ProjectsPage() {
                       <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
                     </svg>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(project.status)}`}
-                  >
-                    {project.status}
-                  </span>
                 </div>
                 <h3 className="mb-1 font-medium text-[#2C2C2C] group-hover:text-[#C67A52]">
                   {project.name}
@@ -160,9 +129,15 @@ export default function ProjectsPage() {
                   </p>
                 )}
                 <div className="flex gap-4 text-xs text-[#9A9A9A]">
-                  <span>{project._count?.ideas || 0} {t("projects.ideas")}</span>
-                  <span>{project._count?.tasks || 0} {t("projects.tasks")}</span>
-                  <span>{project._count?.documents || 0} {t("projects.docs")}</span>
+                  <span>
+                    {project.counts.ideas} {t("projects.ideas")}
+                  </span>
+                  <span>
+                    {project.counts.tasks} {t("projects.tasks")}
+                  </span>
+                  <span>
+                    {project.counts.documents} {t("projects.docs")}
+                  </span>
                 </div>
               </Card>
             </Link>

@@ -1,28 +1,15 @@
-"use client";
+// src/app/(dashboard)/projects/[uuid]/proposals/[proposalUuid]/page.tsx
+// Server Component - UUID 从 URL 获取
 
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { authFetch } from "@/lib/auth-client";
-
-interface Proposal {
-  uuid: string;
-  title: string;
-  proposalType: string;
-  status: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  creatorName?: string;
-  idea?: {
-    uuid: string;
-    title: string;
-  };
-}
+import { getServerAuthContext } from "@/lib/auth-server";
+import { getProposal } from "@/services/proposal.service";
+import { projectExists } from "@/services/project.service";
+import { ProposalActions } from "./proposal-actions";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending Review", color: "bg-[#FFF3E0] text-[#E65100]" },
@@ -38,104 +25,32 @@ const typeConfig: Record<string, { label: string; icon: string }> = {
   tech_spec: { label: "Tech Spec", icon: "⚙️" },
 };
 
-export default function ProposalDetailPage() {
-  const t = useTranslations();
-  const router = useRouter();
-  const params = useParams();
-  const uuid = params.uuid as string;
+interface PageProps {
+  params: Promise<{ uuid: string; proposalUuid: string }>;
+}
 
-  const [proposal, setProposal] = useState<Proposal | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (uuid) {
-      fetchProposal();
-    }
-  }, [uuid]);
-
-  const getCurrentProjectUuid = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("currentProjectUuid");
-    }
-    return null;
-  };
-
-  const fetchProposal = async () => {
-    const projectUuid = getCurrentProjectUuid();
-    if (!projectUuid) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await authFetch(`/api/projects/${projectUuid}/proposals/${uuid}`);
-      const data = await response.json();
-      if (data.success) {
-        setProposal(data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch proposal:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApprove = async () => {
-    const projectUuid = getCurrentProjectUuid();
-    if (!projectUuid || !proposal) return;
-
-    setSubmitting(true);
-    try {
-      const response = await authFetch(`/api/projects/${projectUuid}/proposals/${uuid}/approve`, {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (data.success) {
-        fetchProposal();
-      }
-    } catch (error) {
-      console.error("Failed to approve proposal:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleReject = async () => {
-    const projectUuid = getCurrentProjectUuid();
-    if (!projectUuid || !proposal) return;
-
-    if (!confirm("Are you sure you want to reject this proposal?")) return;
-
-    setSubmitting(true);
-    try {
-      const response = await authFetch(`/api/projects/${projectUuid}/proposals/${uuid}/reject`, {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (data.success) {
-        fetchProposal();
-      }
-    } catch (error) {
-      console.error("Failed to reject proposal:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-[#6B6B6B]">{t("proposals.loadingProposals")}</div>
-      </div>
-    );
+export default async function ProposalDetailPage({ params }: PageProps) {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
   }
 
+  const { uuid: projectUuid, proposalUuid } = await params;
+  const t = await getTranslations();
+
+  // 验证项目存在
+  const exists = await projectExists(auth.companyUuid, projectUuid);
+  if (!exists) {
+    redirect("/projects");
+  }
+
+  // 获取 Proposal 详情
+  const proposal = await getProposal(auth.companyUuid, proposalUuid);
   if (!proposal) {
     return (
       <div className="flex h-full flex-col items-center justify-center">
         <div className="text-[#6B6B6B]">{t("proposals.proposalNotFound")}</div>
-        <Link href="/proposals" className="mt-4 text-[#C67A52] hover:underline">
+        <Link href={`/projects/${projectUuid}/proposals`} className="mt-4 text-[#C67A52] hover:underline">
           {t("proposals.backToProposals")}
         </Link>
       </div>
@@ -146,7 +61,7 @@ export default function ProposalDetailPage() {
     <div className="p-8">
       {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-sm">
-        <Link href="/proposals" className="text-[#6B6B6B] hover:text-[#2C2C2C]">
+        <Link href={`/projects/${projectUuid}/proposals`} className="text-[#6B6B6B] hover:text-[#2C2C2C]">
           {t("nav.proposals")}
         </Link>
         <svg
@@ -168,7 +83,7 @@ export default function ProposalDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC] text-2xl">
-            {typeConfig[proposal.proposalType]?.icon || "📋"}
+            {typeConfig[proposal.outputType]?.icon || "📋"}
           </div>
           <div>
             <div className="mb-1 flex items-center gap-3">
@@ -176,13 +91,13 @@ export default function ProposalDetailPage() {
                 {statusConfig[proposal.status]?.label || proposal.status}
               </Badge>
               <span className="text-sm text-[#6B6B6B]">
-                {typeConfig[proposal.proposalType]?.label || proposal.proposalType}
+                {typeConfig[proposal.outputType]?.label || proposal.outputType}
               </span>
             </div>
             <h1 className="text-2xl font-semibold text-[#2C2C2C]">{proposal.title}</h1>
             <div className="mt-2 flex items-center gap-3 text-sm text-[#6B6B6B]">
-              <span>Created {new Date(proposal.createdAt).toLocaleDateString()}</span>
-              {proposal.creatorName && (
+              <span>{t("common.created")} {new Date(proposal.createdAt).toLocaleDateString()}</span>
+              {proposal.createdBy && (
                 <>
                   <span>·</span>
                   <span className="flex items-center gap-1">
@@ -199,41 +114,18 @@ export default function ProposalDetailPage() {
                       <path d="M12 8V4H8" />
                       <rect width="16" height="12" x="4" y="8" rx="2" />
                     </svg>
-                    {proposal.creatorName}
+                    {proposal.createdBy.name}
                   </span>
                 </>
               )}
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          {proposal.status === "pending" && (
-            <>
-              <Button
-                variant="outline"
-                onClick={handleReject}
-                disabled={submitting}
-                className="border-[#D32F2F] text-[#D32F2F] hover:bg-[#FFEBEE]"
-              >
-                {t("common.reject")}
-              </Button>
-              <Button
-                onClick={handleApprove}
-                disabled={submitting}
-                className="bg-[#5A9E6F] hover:bg-[#4A8E5F] text-white"
-              >
-                {submitting ? t("common.processing") : t("common.approve")}
-              </Button>
-            </>
-          )}
-          <Button
-            variant="outline"
-            className="border-[#E5E0D8] text-[#6B6B6B]"
-            onClick={() => router.back()}
-          >
-            {t("common.back")}
-          </Button>
-        </div>
+        <ProposalActions
+          proposalUuid={proposalUuid}
+          projectUuid={projectUuid}
+          status={proposal.status}
+        />
       </div>
 
       {/* Content */}
@@ -243,42 +135,21 @@ export default function ProposalDetailPage() {
           <Card className="border-[#E5E0D8] p-6">
             <h2 className="mb-4 text-lg font-medium text-[#2C2C2C]">{t("common.content")}</h2>
             <div className="prose prose-sm max-w-none text-[#6B6B6B]">
-              <div className="whitespace-pre-wrap rounded-lg bg-[#F5F2EC] p-4 font-mono text-sm">
-                {proposal.content}
-              </div>
+              {proposal.outputData ? (
+                <div className="whitespace-pre-wrap rounded-lg bg-[#F5F2EC] p-4 font-mono text-sm">
+                  {typeof proposal.outputData === "string"
+                    ? proposal.outputData
+                    : JSON.stringify(proposal.outputData, null, 2)}
+                </div>
+              ) : (
+                <p className="text-sm text-[#9A9A9A] italic">{t("common.noContent")}</p>
+              )}
             </div>
           </Card>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Source Idea */}
-          {proposal.idea && (
-            <Card className="border-[#E5E0D8] p-4">
-              <h3 className="mb-3 text-sm font-medium text-[#6B6B6B]">{t("proposals.sourceIdea")}</h3>
-              <Link
-                href={`/ideas/${proposal.idea.uuid}`}
-                className="flex items-center gap-2 text-sm text-[#C67A52] hover:underline"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-                  <path d="M9 18h6" />
-                  <path d="M10 22h4" />
-                </svg>
-                {proposal.idea.title}
-              </Link>
-            </Card>
-          )}
-
           {/* Details */}
           <Card className="border-[#E5E0D8] p-4">
             <h3 className="mb-3 text-sm font-medium text-[#6B6B6B]">{t("common.details")}</h3>
@@ -292,7 +163,7 @@ export default function ProposalDetailPage() {
               <div className="flex justify-between text-sm">
                 <dt className="text-[#9A9A9A]">{t("common.type")}</dt>
                 <dd className="font-medium text-[#2C2C2C]">
-                  {typeConfig[proposal.proposalType]?.label || proposal.proposalType}
+                  {typeConfig[proposal.outputType]?.label || proposal.outputType}
                 </dd>
               </div>
               <div className="flex justify-between text-sm">

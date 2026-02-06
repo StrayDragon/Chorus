@@ -1,24 +1,15 @@
-"use client";
+// src/app/(dashboard)/projects/[uuid]/tasks/page.tsx
+// Server Component - UUID 从 URL 获取
 
-import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { authFetch } from "@/lib/auth-client";
-
-interface Task {
-  uuid: string;
-  title: string;
-  description: string | null;
-  status: string;
-  priority: string;
-  storyPoints: number | null;
-  assigneeType: string | null;
-  assigneeName?: string;
-  createdAt: string;
-}
+import { getServerAuthContext } from "@/lib/auth-server";
+import { listTasks } from "@/services/task.service";
+import { projectExists } from "@/services/project.service";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   open: { label: "Open", color: "bg-[#FFF3E0] text-[#E65100]" },
@@ -36,47 +27,37 @@ const columns = [
   { id: "done", label: "Done", statuses: ["done", "closed"] },
 ];
 
-export default function TasksPage() {
-  const t = useTranslations();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+interface PageProps {
+  params: Promise<{ uuid: string }>;
+}
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+export default async function TasksPage({ params }: PageProps) {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
+  }
 
-  const getCurrentProjectUuid = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("currentProjectUuid");
-    }
-    return null;
-  };
+  const { uuid: projectUuid } = await params;
+  const t = await getTranslations();
 
-  const fetchTasks = async () => {
-    const projectUuid = getCurrentProjectUuid();
-    if (!projectUuid) {
-      setLoading(false);
-      return;
-    }
+  // 验证项目存在
+  const exists = await projectExists(auth.companyUuid, projectUuid);
+  if (!exists) {
+    redirect("/projects");
+  }
 
-    try {
-      const response = await authFetch(`/api/projects/${projectUuid}/tasks`);
-      const data = await response.json();
-      if (data.success) {
-        setTasks(data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch tasks:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 获取所有 Tasks
+  const { tasks } = await listTasks({
+    companyUuid: auth.companyUuid,
+    projectUuid,
+    skip: 0,
+    take: 1000,
+  });
 
   const getTasksForColumn = (statuses: string[]) => {
     return tasks.filter((task) => statuses.includes(task.status));
   };
 
-  // Calculate total Agent Hours for column
   const getColumnHours = (statuses: string[]) => {
     return getTasksForColumn(statuses).reduce(
       (sum, task) => sum + (task.storyPoints || 0),
@@ -84,16 +65,7 @@ export default function TasksPage() {
     );
   };
 
-  // Calculate total hours across all tasks
   const totalHours = tasks.reduce((sum, task) => sum + (task.storyPoints || 0), 0);
-
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-[#6B6B6B]">{t("tasks.loadingTasks")}</div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-full flex-col p-8">
@@ -190,73 +162,63 @@ export default function TasksPage() {
                   </div>
                 ) : (
                   columnTasks.map((task) => (
-                    <Link key={task.uuid} href={`/tasks/${task.uuid}`}>
+                    <Link key={task.uuid} href={`/projects/${projectUuid}/tasks/${task.uuid}`}>
                       <Card className="cursor-pointer border-[#E5E0D8] bg-white p-4 transition-all hover:border-[#C67A52] hover:shadow-sm">
-                      <div className="mb-2 flex items-start justify-between">
-                        <Badge className={statusConfig[task.status]?.color || ""}>
-                          {statusConfig[task.status]?.label || task.status}
-                        </Badge>
-                        {task.storyPoints && (
-                          <span className="flex items-center gap-1 rounded bg-[#FFF3E0] px-2 py-0.5 text-xs font-medium text-[#E65100]">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3"
-                            >
-                              <circle cx="12" cy="12" r="10" />
-                              <polyline points="12 6 12 12 16 14" />
-                            </svg>
-                            {task.storyPoints}h
-                          </span>
+                        <div className="mb-2 flex items-start justify-between">
+                          <Badge className={statusConfig[task.status]?.color || ""}>
+                            {statusConfig[task.status]?.label || task.status}
+                          </Badge>
+                          {task.storyPoints && (
+                            <span className="flex items-center gap-1 rounded bg-[#FFF3E0] px-2 py-0.5 text-xs font-medium text-[#E65100]">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-3 w-3"
+                              >
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                              </svg>
+                              {task.storyPoints}h
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="mb-1 font-medium text-[#2C2C2C]">
+                          {task.title}
+                        </h4>
+                        {task.description && (
+                          <p className="mb-2 line-clamp-2 text-sm text-[#6B6B6B]">
+                            {task.description}
+                          </p>
                         )}
-                      </div>
-                      <h4 className="mb-1 font-medium text-[#2C2C2C]">
-                        {task.title}
-                      </h4>
-                      {task.description && (
-                        <p className="mb-2 line-clamp-2 text-sm text-[#6B6B6B]">
-                          {task.description}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between text-xs text-[#9A9A9A]">
-                        {task.assigneeName ? (
-                          <span className="flex items-center gap-1">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3"
-                            >
-                              <path d="M12 8V4H8" />
-                              <rect width="16" height="12" x="4" y="8" rx="2" />
-                            </svg>
-                            {task.assigneeName}
-                          </span>
-                        ) : task.status === "open" ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs text-[#C67A52] hover:bg-[#FFF3E0]"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              // TODO: Claim task
-                            }}
-                          >
-                            {t("common.claim")}
-                          </Button>
-                        ) : (
-                          <span>{t("common.unassigned")}</span>
-                        )}
-                      </div>
+                        <div className="flex items-center justify-between text-xs text-[#9A9A9A]">
+                          {task.assignee ? (
+                            <span className="flex items-center gap-1">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-3 w-3"
+                              >
+                                <path d="M12 8V4H8" />
+                                <rect width="16" height="12" x="4" y="8" rx="2" />
+                              </svg>
+                              {task.assignee.name}
+                            </span>
+                          ) : task.status === "open" ? (
+                            <span className="text-[#C67A52]">{t("common.claim")}</span>
+                          ) : (
+                            <span>{t("common.unassigned")}</span>
+                          )}
+                        </div>
                       </Card>
                     </Link>
                   ))

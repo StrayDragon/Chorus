@@ -33,6 +33,13 @@ interface Project {
   name: string;
 }
 
+// 从 URL 提取 project UUID
+function extractProjectUuid(pathname: string): string | null {
+  // Match /projects/[uuid] or /projects/[uuid]/anything
+  const match = pathname.match(/^\/projects\/([a-f0-9-]{36})(\/|$)/);
+  return match ? match[1] : null;
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -43,58 +50,38 @@ export default function DashboardLayout({
   const t = useTranslations();
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
 
-  // Determine if we're in a project context
+  // 从 URL 获取当前 project UUID (stateful URL)
+  const currentProjectUuid = extractProjectUuid(pathname);
+  const currentProject = projects.find((p) => p.uuid === currentProjectUuid) || null;
+
   // Global pages: /projects, /projects/new, /settings
-  // Project pages: /projects/[uuid], /dashboard, /ideas, /tasks, etc.
   const isGlobalPage =
     pathname === "/projects" ||
     pathname === "/projects/new" ||
     pathname === "/settings";
-  const isProjectContext = currentProject && !isGlobalPage;
+  const isProjectContext = currentProjectUuid && !isGlobalPage;
 
   useEffect(() => {
     checkSession();
     fetchProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Watch for pathname changes to update currentProject when entering /projects/[uuid]
-  useEffect(() => {
-    if (projects.length === 0) return;
-
-    // Check if we're on a project detail page /projects/[uuid]
-    const projectDetailMatch = pathname.match(/^\/projects\/([^/]+)$/);
-    if (projectDetailMatch) {
-      const projectUuid = projectDetailMatch[1];
-      // Don't match "new"
-      if (projectUuid !== "new") {
-        const project = projects.find((p) => p.uuid === projectUuid);
-        if (project && currentProject?.uuid !== projectUuid) {
-          setCurrentProject(project);
-          localStorage.setItem("currentProjectUuid", projectUuid);
-        }
-      }
-    }
-  }, [pathname, projects, currentProject?.uuid]);
 
   const checkSession = async () => {
     const token = await getAccessToken();
 
     if (!token) {
-      // No token, redirect to login
       router.push("/login");
       return;
     }
 
     try {
-      // Verify token and get user info from API
       const response = await authFetch("/api/auth/session");
 
       if (!response.ok) {
-        // Token invalid, clear and redirect to login
         clearUserManager();
         router.push("/login");
         return;
@@ -108,7 +95,6 @@ export default function DashboardLayout({
           name: data.data.user.name || data.data.user.email,
         });
       } else {
-        // Invalid response, redirect to login
         clearUserManager();
         router.push("/login");
         return;
@@ -125,7 +111,6 @@ export default function DashboardLayout({
 
   const fetchProjects = async () => {
     try {
-      // Use authFetch to include Bearer token for proper company filtering
       const response = await authFetch("/api/projects");
       if (!response.ok) {
         console.error("Failed to fetch projects:", response.status);
@@ -134,15 +119,6 @@ export default function DashboardLayout({
       const data = await response.json();
       if (data.success && data.data.length > 0) {
         setProjects(data.data);
-        // Set first project as current if none selected
-        const savedProjectUuid = localStorage.getItem("currentProjectUuid");
-        const savedProject = data.data.find(
-          (p: Project) => p.uuid === savedProjectUuid
-        );
-        setCurrentProject(savedProject || data.data[0]);
-        if (!savedProject && data.data[0]) {
-          localStorage.setItem("currentProjectUuid", data.data[0].uuid);
-        }
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error);
@@ -150,11 +126,9 @@ export default function DashboardLayout({
   };
 
   const selectProject = (project: Project) => {
-    setCurrentProject(project);
-    localStorage.setItem("currentProjectUuid", project.uuid);
     setProjectMenuOpen(false);
-    // Navigate to project dashboard after selection
-    router.push("/dashboard");
+    // Navigate to project dashboard with UUID in URL
+    router.push(`/projects/${project.uuid}/dashboard`);
   };
 
   const handleLogout = async () => {
@@ -163,7 +137,6 @@ export default function DashboardLayout({
     } catch {
       clearUserManager();
     }
-    localStorage.removeItem("currentProjectUuid");
     router.push("/login");
   };
 
@@ -175,28 +148,30 @@ export default function DashboardLayout({
     );
   }
 
-  // Project navigation items (shown when inside a project)
-  const projectNavItems = [
-    { href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
-    { href: "/ideas", label: t("nav.ideas"), icon: Lightbulb },
-    { href: "/documents", label: t("nav.documents"), icon: FileText },
-    { href: "/proposals", label: t("nav.proposals"), icon: Tags },
-    { href: "/tasks", label: t("nav.tasks"), icon: CheckSquare },
-    { href: "/activity", label: t("nav.activity"), icon: Activity },
+  // Project navigation items - 使用 UUID 构建 URL
+  const getProjectNavItems = (projectUuid: string) => [
+    { href: `/projects/${projectUuid}/dashboard`, label: t("nav.overview"), icon: LayoutDashboard },
+    { href: `/projects/${projectUuid}/ideas`, label: t("nav.ideas"), icon: Lightbulb },
+    { href: `/projects/${projectUuid}/documents`, label: t("nav.documents"), icon: FileText },
+    { href: `/projects/${projectUuid}/proposals`, label: t("nav.proposals"), icon: Tags },
+    { href: `/projects/${projectUuid}/tasks`, label: t("nav.tasks"), icon: CheckSquare },
+    { href: `/projects/${projectUuid}/activity`, label: t("nav.activity"), icon: Activity },
   ];
 
-  // Global navigation items (shown when NOT in a project)
+  // Global navigation items
   const globalNavItems = [
     { href: "/projects", label: t("nav.projects"), icon: FolderKanban },
     { href: "/settings", label: t("nav.settings"), icon: Settings },
   ];
 
   const isNavActive = (href: string) => {
-    if (href === "/dashboard") {
-      return pathname === "/dashboard";
+    // Exact match for dashboard
+    if (href.endsWith("/dashboard")) {
+      return pathname === href;
     }
+    // For /projects list page
     if (href === "/projects") {
-      return pathname === "/projects" || pathname.startsWith("/projects/");
+      return pathname === "/projects";
     }
     return pathname === href || pathname.startsWith(href + "/");
   };
@@ -216,9 +191,9 @@ export default function DashboardLayout({
 
           {/* Navigation */}
           <nav className="flex flex-col gap-1">
-            {isProjectContext ? (
+            {isProjectContext && currentProjectUuid ? (
               <>
-                {/* Back to Projects (shown in project context) */}
+                {/* Back to Projects */}
                 <Link href="/projects">
                   <Button
                     variant="ghost"
@@ -284,7 +259,7 @@ export default function DashboardLayout({
 
                 {/* Project Navigation Items */}
                 <div className="mt-2 flex flex-col gap-1">
-                  {projectNavItems.map((item) => {
+                  {getProjectNavItems(currentProjectUuid).map((item) => {
                     const isActive = isNavActive(item.href);
                     const Icon = item.icon;
                     return (
@@ -310,7 +285,7 @@ export default function DashboardLayout({
               </>
             ) : (
               <>
-                {/* Global Navigation Items (Projects, Settings) */}
+                {/* Global Navigation Items */}
                 <div className="flex flex-col gap-1">
                   {globalNavItems.map((item) => {
                     const isActive = isNavActive(item.href);

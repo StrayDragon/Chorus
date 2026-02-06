@@ -33,7 +33,8 @@
     "saving": "Saving...",
     "claim": "Claim",
     "reject": "Reject",
-    "approve": "Approve"
+    "approve": "Approve",
+    "selectProject": "Please select a project"
   },
   "time": {
     "justNow": "Just now",

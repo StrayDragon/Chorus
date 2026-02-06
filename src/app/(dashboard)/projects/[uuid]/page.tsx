@@ -1,145 +1,42 @@
-"use client";
+// src/app/(dashboard)/projects/[uuid]/page.tsx
+// Server Component - 数据在服务端获取，零客户端 JS
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
-import { authFetch } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { getServerAuthContext } from "@/lib/auth-server";
+import { getProject, getProjectStats } from "@/services/project.service";
 
-interface Project {
-  uuid: string;
-  name: string;
-  description: string | null;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
+interface PageProps {
+  params: Promise<{ uuid: string }>;
 }
 
-interface Stats {
-  ideas: { total: number; open: number; inProgress: number };
-  tasks: { total: number; open: number; inProgress: number; toVerify: number };
-  documents: { total: number };
-  proposals: { total: number; pending: number };
-}
-
-export default function ProjectOverviewPage() {
-  const params = useParams();
-  const uuid = params.uuid as string;
-  const t = useTranslations();
-  const [project, setProject] = useState<Project | null>(null);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (uuid) {
-      fetchProject();
-    }
-  }, [uuid]);
-
-  const fetchProject = async () => {
-    try {
-      const response = await authFetch(`/api/projects/${uuid}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setProject(data.data);
-        // Save as current project
-        localStorage.setItem("currentProjectUuid", uuid);
-        // Fetch stats
-        await fetchStats();
-      } else {
-        setError(data.error?.message || "Project not found");
-      }
-    } catch {
-      setError("Failed to load project");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      // Fetch ideas, tasks, documents, proposals counts
-      const [ideasRes, tasksRes, docsRes, proposalsRes] = await Promise.all([
-        authFetch(`/api/projects/${uuid}/ideas`),
-        authFetch(`/api/projects/${uuid}/tasks`),
-        authFetch(`/api/projects/${uuid}/documents`),
-        authFetch(`/api/projects/${uuid}/proposals`),
-      ]);
-
-      const [ideas, tasks, docs, proposals] = await Promise.all([
-        ideasRes.json(),
-        tasksRes.json(),
-        docsRes.json(),
-        proposalsRes.json(),
-      ]);
-
-      const ideasData = ideas.success ? ideas.data : [];
-      const tasksData = tasks.success ? tasks.data : [];
-      const docsData = docs.success ? docs.data : [];
-      const proposalsData = proposals.success ? proposals.data : [];
-
-      setStats({
-        ideas: {
-          total: ideasData.length,
-          open: ideasData.filter((i: { status: string }) => i.status === "open").length,
-          inProgress: ideasData.filter((i: { status: string }) => i.status === "in_progress").length,
-        },
-        tasks: {
-          total: tasksData.length,
-          open: tasksData.filter((t: { status: string }) => t.status === "open").length,
-          inProgress: tasksData.filter((t: { status: string }) => t.status === "in_progress").length,
-          toVerify: tasksData.filter((t: { status: string }) => t.status === "to_verify").length,
-        },
-        documents: {
-          total: docsData.length,
-        },
-        proposals: {
-          total: proposalsData.length,
-          pending: proposalsData.filter((p: { status: string }) => p.status === "pending").length,
-        },
-      });
-    } catch (err) {
-      console.error("Failed to fetch stats:", err);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-[#6B6B6B]">{t("projectOverview.loadingProject")}</div>
-      </div>
-    );
+export default async function ProjectOverviewPage({ params }: PageProps) {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
   }
 
-  if (error || !project) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Card className="border-[#E5E0D8] p-8 text-center">
-          <div className="mb-4 text-4xl">404</div>
-          <h2 className="mb-2 text-lg font-medium text-[#2C2C2C]">
-            {t("projectOverview.notFoundTitle")}
-          </h2>
-          <p className="mb-4 text-sm text-[#6B6B6B]">{error}</p>
-          <Link href="/projects">
-            <Button className="bg-[#C67A52] hover:bg-[#B56A42] text-white">
-              {t("projectOverview.backToProjects")}
-            </Button>
-          </Link>
-        </Card>
-      </div>
-    );
+  const { uuid } = await params;
+  const t = await getTranslations();
+
+  // 获取项目详情
+  const project = await getProject(auth.companyUuid, uuid);
+  if (!project) {
+    notFound();
   }
+
+  // 获取项目统计数据
+  const stats = await getProjectStats(auth.companyUuid, uuid);
 
   const statCards = [
     {
       label: t("nav.ideas"),
-      value: stats?.ideas.total || 0,
-      subtext: t("projectOverview.ideasSubtext", { open: stats?.ideas.open || 0, inProgress: stats?.ideas.inProgress || 0 }),
-      href: `/ideas`,
+      value: stats.ideas.total,
+      subtext: t("projectOverview.ideasSubtext", { open: stats.ideas.open, inProgress: 0 }),
+      href: `/projects/${uuid}/ideas`,
       color: "bg-[#FFF3E0]",
       iconColor: "text-[#E65100]",
       icon: (
@@ -161,9 +58,9 @@ export default function ProjectOverviewPage() {
     },
     {
       label: t("nav.tasks"),
-      value: stats?.tasks.total || 0,
-      subtext: t("projectOverview.tasksSubtext", { open: stats?.tasks.open || 0, toVerify: stats?.tasks.toVerify || 0 }),
-      href: `/tasks`,
+      value: stats.tasks.total,
+      subtext: t("projectOverview.tasksSubtext", { open: stats.tasks.total - stats.tasks.inProgress, toVerify: 0 }),
+      href: `/projects/${uuid}/tasks`,
       color: "bg-[#E3F2FD]",
       iconColor: "text-[#1976D2]",
       icon: (
@@ -185,9 +82,9 @@ export default function ProjectOverviewPage() {
     },
     {
       label: t("nav.documents"),
-      value: stats?.documents.total || 0,
+      value: stats.documents.total,
       subtext: t("projectOverview.documentsSubtext"),
-      href: `/documents`,
+      href: `/projects/${uuid}/documents`,
       color: "bg-[#E8F5E9]",
       iconColor: "text-[#5A9E6F]",
       icon: (
@@ -208,9 +105,9 @@ export default function ProjectOverviewPage() {
     },
     {
       label: t("nav.proposals"),
-      value: stats?.proposals.total || 0,
-      subtext: t("projectOverview.proposalsSubtext", { pending: stats?.proposals.pending || 0 }),
-      href: `/proposals`,
+      value: stats.proposals.total,
+      subtext: t("projectOverview.proposalsSubtext", { pending: stats.proposals.pending }),
+      href: `/projects/${uuid}/proposals`,
       color: "bg-[#F3E5F5]",
       iconColor: "text-[#7B1FA2]",
       icon: (
@@ -243,14 +140,8 @@ export default function ProjectOverviewPage() {
               <h1 className="text-2xl font-semibold text-[#2C2C2C]">
                 {project.name}
               </h1>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  project.status === "active"
-                    ? "bg-[#E8F5E9] text-[#5A9E6F]"
-                    : "bg-[#F5F2EC] text-[#6B6B6B]"
-                }`}
-              >
-                {project.status}
+              <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#E8F5E9] text-[#5A9E6F]">
+                active
               </span>
             </div>
             {project.description && (
@@ -323,7 +214,7 @@ export default function ProjectOverviewPage() {
           {t("projectOverview.quickActions")}
         </h2>
         <div className="flex flex-wrap gap-3">
-          <Link href="/ideas">
+          <Link href={`/projects/${uuid}/ideas`}>
             <Button
               variant="outline"
               className="border-[#E5E0D8] text-[#6B6B6B] hover:bg-[#F5F2EC]"
@@ -344,7 +235,7 @@ export default function ProjectOverviewPage() {
               {t("projectOverview.addIdea")}
             </Button>
           </Link>
-          <Link href="/tasks">
+          <Link href={`/projects/${uuid}/tasks`}>
             <Button
               variant="outline"
               className="border-[#E5E0D8] text-[#6B6B6B] hover:bg-[#F5F2EC]"
@@ -366,7 +257,7 @@ export default function ProjectOverviewPage() {
               {t("projectOverview.viewKanban")}
             </Button>
           </Link>
-          <Link href="/documents">
+          <Link href={`/projects/${uuid}/documents`}>
             <Button
               variant="outline"
               className="border-[#E5E0D8] text-[#6B6B6B] hover:bg-[#F5F2EC]"

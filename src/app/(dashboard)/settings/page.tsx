@@ -17,8 +17,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Key, Check, X, Copy, Globe, AlertTriangle, ShieldAlert } from "lucide-react";
-import { authFetch } from "@/lib/auth-client";
 import { useLocale } from "@/contexts/locale-context";
+import { getApiKeysAction, createAgentAndKeyAction, deleteApiKeyAction } from "./actions";
 import { locales, localeNames, type Locale } from "@/i18n/config";
 
 interface ApiKey {
@@ -116,16 +116,9 @@ export default function SettingsPage() {
 
   const fetchApiKeys = async () => {
     try {
-      const response = await authFetch("/api/api-keys");
-      const data = await response.json();
-      if (data.success) {
-        const keys = data.data.map(
-          (key: ApiKey & { agent?: { roles: string[] } }) => ({
-            ...key,
-            roles: key.agent?.roles || [],
-          })
-        );
-        setApiKeys(keys);
+      const result = await getApiKeysAction();
+      if (result.success && result.data) {
+        setApiKeys(result.data);
       }
     } catch (error) {
       console.error("Failed to fetch API keys:", error);
@@ -155,37 +148,17 @@ export default function SettingsPage() {
 
     setSubmitting(true);
     try {
-      // First create an agent with the specified roles and persona
-      const agentResponse = await authFetch("/api/agents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newKeyName,
-          roles: selectedRoles,
-          persona: customPersona || null,
-        }),
+      const result = await createAgentAndKeyAction({
+        name: newKeyName,
+        roles: selectedRoles,
+        persona: customPersona || null,
       });
-      const agentData = await agentResponse.json();
 
-      if (!agentData.success) {
-        console.error("Failed to create agent:", agentData.error);
-        return;
-      }
-
-      // Then create an API key for the agent
-      const keyResponse = await authFetch("/api/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agentUuid: agentData.data.uuid,
-          name: newKeyName,
-        }),
-      });
-      const keyData = await keyResponse.json();
-
-      if (keyData.success) {
-        setCreatedKey(keyData.data.key);
+      if (result.success && result.key) {
+        setCreatedKey(result.key);
         fetchApiKeys();
+      } else {
+        console.error("Failed to create API key:", result.error);
       }
     } catch (error) {
       console.error("Failed to create API key:", error);
@@ -203,12 +176,11 @@ export default function SettingsPage() {
     if (!keyToDelete) return;
 
     try {
-      const response = await authFetch(`/api/api-keys/${keyToDelete}`, {
-        method: "DELETE",
-      });
-      const data = await response.json();
-      if (data.success) {
+      const result = await deleteApiKeyAction(keyToDelete);
+      if (result.success) {
         setApiKeys(apiKeys.filter((k) => k.uuid !== keyToDelete));
+      } else {
+        console.error("Failed to delete API key:", result.error);
       }
     } catch (error) {
       console.error("Failed to delete API key:", error);

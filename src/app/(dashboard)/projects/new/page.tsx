@@ -19,7 +19,7 @@ import {
   Sparkles,
   Bell,
 } from "lucide-react";
-import { authFetch } from "@/lib/auth-client";
+import { createProjectAction } from "./actions";
 
 interface UploadedFile {
   name: string;
@@ -109,41 +109,20 @@ export default function NewProjectPage() {
     setLoading(true);
 
     try {
-      // Create project
-      const response = await authFetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      const result = await createProjectAction({
+        name: formData.name,
+        description: formData.description,
+        ideas: ideas,
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        const projectUuid = data.data.uuid;
-
-        // Create ideas if any
-        const validIdeas = ideas.filter((idea) => idea.trim());
-        for (const ideaContent of validIdeas) {
-          await authFetch("/api/ideas", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-project-uuid": projectUuid,
-            },
-            body: JSON.stringify({
-              title: ideaContent.slice(0, 100),
-              description: ideaContent,
-            }),
-          });
-        }
-
+      if (result.success && result.projectUuid) {
         // TODO: Upload documents when API is ready
 
         // Save as current project and redirect
-        localStorage.setItem("currentProjectUuid", projectUuid);
-        router.push(`/projects/${projectUuid}`);
+        localStorage.setItem("currentProjectUuid", result.projectUuid);
+        router.push(`/projects/${result.projectUuid}`);
       } else {
-        setError(data.error?.message || "Failed to create project");
+        setError(result.error || "Failed to create project");
       }
     } catch {
       setError("An error occurred. Please try again.");
