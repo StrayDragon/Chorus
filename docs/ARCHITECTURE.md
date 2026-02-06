@@ -845,6 +845,7 @@ Admin Agent 代表人类执行审批、验证、项目管理等操作。
 | 工具 | 描述 |
 |-----|------|
 | `chorus_admin_create_project` | 创建新项目 |
+| `chorus_admin_create_idea` | 创建 Idea（代理人类提出需求） |
 | `chorus_admin_approve_proposal` | 审批通过 Proposal |
 | `chorus_admin_reject_proposal` | 拒绝 Proposal |
 | `chorus_admin_verify_task` | 验证 Task（to_verify → done） |
