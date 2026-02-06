@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Key, Check, X, Copy, Globe } from "lucide-react";
+import { Plus, Key, Check, X, Copy, Globe, AlertTriangle, ShieldAlert } from "lucide-react";
 import { authFetch } from "@/lib/auth-client";
 import { useLocale } from "@/contexts/locale-context";
 import { locales, localeNames, type Locale } from "@/i18n/config";
@@ -75,6 +75,22 @@ const DEV_PERSONAS = [
   },
 ];
 
+// Admin Agent Persona presets
+const ADMIN_PERSONAS = [
+  {
+    id: "careful_admin",
+    label: "Careful Admin",
+    description:
+      "You are a careful administrator who thoroughly reviews all proposals and tasks before approval. You verify that acceptance criteria are met, check for potential issues, and document your reasoning. When in doubt, you prefer to ask for clarification rather than approve blindly.",
+  },
+  {
+    id: "efficient_admin",
+    label: "Efficient Admin",
+    description:
+      "You are an efficient administrator who streamlines the approval process while maintaining quality standards. You trust the team's work but still perform necessary checks. You focus on unblocking work quickly while ensuring basic quality gates are met.",
+  },
+];
+
 export default function SettingsPage() {
   const t = useTranslations();
   const { locale, setLocale } = useLocale();
@@ -92,6 +108,7 @@ export default function SettingsPage() {
   const [newKeyName, setNewKeyName] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [customPersona, setCustomPersona] = useState("");
+  const [adminConfirmed, setAdminConfirmed] = useState(false);
 
   useEffect(() => {
     fetchApiKeys();
@@ -118,9 +135,14 @@ export default function SettingsPage() {
   };
 
   const toggleRole = (role: string) => {
-    setSelectedRoles((prev) =>
-      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
-    );
+    setSelectedRoles((prev) => {
+      const newRoles = prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role];
+      // Reset admin confirmation if admin role is deselected
+      if (role === "admin_agent" && prev.includes(role)) {
+        setAdminConfirmed(false);
+      }
+      return newRoles;
+    });
   };
 
   const selectPersonaPreset = (description: string) => {
@@ -215,6 +237,7 @@ export default function SettingsPage() {
     setSelectedRoles([]);
     setCustomPersona("");
     setCreatedKey(null);
+    setAdminConfirmed(false);
   };
 
   const closeModal = () => {
@@ -231,8 +254,14 @@ export default function SettingsPage() {
     if (selectedRoles.includes("developer_agent")) {
       personas.push(...DEV_PERSONAS);
     }
+    if (selectedRoles.includes("admin_agent")) {
+      personas.push(...ADMIN_PERSONAS);
+    }
     return personas;
   };
+
+  // Check if admin role is selected
+  const hasAdminRole = selectedRoles.includes("admin_agent");
 
   if (loading) {
     return (
@@ -307,21 +336,32 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {apiKeys.map((key) => (
+            {apiKeys.map((key) => {
+              const isAdmin = key.roles.includes("admin_agent");
+              return (
               <div
                 key={key.uuid}
-                className="rounded-xl border border-border bg-card p-5"
+                className={`rounded-xl border p-5 ${
+                  isAdmin
+                    ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/50"
+                    : "border-border bg-card"
+                }`}
               >
                 {/* Header Row */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                        key.roles.includes("developer_agent")
-                          ? "bg-green-100"
-                          : "bg-primary/10"
+                        isAdmin
+                          ? "bg-red-100 dark:bg-red-900"
+                          : key.roles.includes("developer_agent")
+                            ? "bg-green-100"
+                            : "bg-primary/10"
                       }`}
                     >
+                      {isAdmin ? (
+                        <ShieldAlert className="h-[18px] w-[18px] text-red-600 dark:text-red-400" />
+                      ) : (
                       <Key
                         className={`h-[18px] w-[18px] ${
                           key.roles.includes("developer_agent")
@@ -329,6 +369,7 @@ export default function SettingsPage() {
                             : "text-primary"
                         }`}
                       />
+                      )}
                     </div>
                     <div>
                       <div className="text-sm font-medium text-foreground">
@@ -399,9 +440,27 @@ export default function SettingsPage() {
                       {t("settings.pmAgent")}
                     </span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`flex h-[18px] w-[18px] items-center justify-center rounded ${
+                        key.roles.includes("admin_agent")
+                          ? "bg-red-500"
+                          : "border-2 border-border"
+                      }`}
+                    >
+                      {key.roles.includes("admin_agent") && (
+                        <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                      )}
+                    </div>
+                    <span
+                      className={`text-xs ${key.roles.includes("admin_agent") ? "font-medium text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
+                    >
+                      {t("settings.adminAgent")}
+                    </span>
+                  </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>
@@ -537,7 +596,72 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       </button>
+                      {/* Admin Agent - with danger styling */}
+                      <button
+                        type="button"
+                        onClick={() => toggleRole("admin_agent")}
+                        className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                          selectedRoles.includes("admin_agent")
+                            ? "border-red-500 bg-red-50 dark:bg-red-950"
+                            : "border-border hover:border-red-400"
+                        }`}
+                      >
+                        <div
+                          className={`mt-0.5 flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded ${
+                            selectedRoles.includes("admin_agent")
+                              ? "bg-red-500"
+                              : "border-2 border-red-300"
+                          }`}
+                        >
+                          {selectedRoles.includes("admin_agent") && (
+                            <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
+                            <ShieldAlert className="h-4 w-4" />
+                            {t("settings.adminAgent")}
+                          </div>
+                          <div className="text-xs text-red-500/80 dark:text-red-400/80">
+                            {t("settings.adminAgentDesc")}
+                          </div>
+                        </div>
+                      </button>
                     </div>
+
+                    {/* Admin Warning Box */}
+                    {hasAdminRole && (
+                      <div className="mt-3 rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+                              {t("settings.adminWarningTitle")}
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400">
+                              {t("settings.adminWarningDesc")}
+                            </p>
+                            <ul className="list-inside list-disc space-y-1 text-xs text-red-600 dark:text-red-400">
+                              <li>{t("settings.adminWarningItem1")}</li>
+                              <li>{t("settings.adminWarningItem2")}</li>
+                              <li>{t("settings.adminWarningItem3")}</li>
+                              <li>{t("settings.adminWarningItem4")}</li>
+                            </ul>
+                            <label className="mt-3 flex cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={adminConfirmed}
+                                onChange={(e) => setAdminConfirmed(e.target.checked)}
+                                className="h-4 w-4 rounded border-red-300 text-red-600 focus:ring-red-500"
+                              />
+                              <span className="text-xs font-medium text-red-700 dark:text-red-300">
+                                {t("settings.adminConfirmCheckbox")}
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Agent Persona - Always visible */}
@@ -596,8 +720,10 @@ export default function SettingsPage() {
                   <Button
                     type="submit"
                     disabled={
-                      !newKeyName || selectedRoles.length === 0 || submitting
+                      !newKeyName || selectedRoles.length === 0 || submitting ||
+                      (hasAdminRole && !adminConfirmed)
                     }
+                    className={hasAdminRole ? "bg-red-600 hover:bg-red-700" : ""}
                   >
                     {submitting ? t("settings.creating") : t("settings.createApiKey")}
                   </Button>

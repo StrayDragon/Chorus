@@ -50,6 +50,15 @@
     "developerAgentDesc": "执行任务、编写代码、报告问题、提交代码",
     "pmAgent": "产品智能体",
     "pmAgentDesc": "分析需求、撰写提案、管理任务",
+    "adminAgent": "管理员智能体",
+    "adminAgentDesc": "人类级别权限：审批提案、验证任务、创建项目",
+    "adminWarningTitle": "危险：管理员智能体权限",
+    "adminWarningDesc": "您正在创建具有人类级别权限的智能体。此智能体将能够：",
+    "adminWarningItem1": "批准或拒绝提案",
+    "adminWarningItem2": "验证并关闭任务",
+    "adminWarningItem3": "创建和管理项目",
+    "adminWarningItem4": "删除任意内容（想法、任务、文档）",
+    "adminConfirmCheckbox": "我已了解风险，确认创建管理员智能体",
     "created": "创建于",
     "apiKeyCreated": "API 密钥已创建",
     "apiKeyCreatedDesc": "请立即复制此密钥。您将无法再次查看它！",
@@ -90,6 +99,10 @@
     "fullstackDev": "全栈开发者",
     "fullstackDevDesc": "您是一位多才多艺的全栈开发者，能够在整个技术栈中自如工作。您可以构建 API、设计数据库和创建响应式 UI。您优先考虑用户体验和性能。",
     "pragmaticDev": "务实开发者",
-    "pragmaticDevDesc": "您是一位务实的开发者，专注于快速交付可工作的解决方案。您避免过早优化，为关键路径编写测试，并偏好简单解决方案而非复杂抽象。"
+    "pragmaticDevDesc": "您是一位务实的开发者，专注于快速交付可工作的解决方案。您避免过早优化，为关键路径编写测试，并偏好简单解决方案而非复杂抽象。",
+    "carefulAdmin": "谨慎管理员",
+    "carefulAdminDesc": "您是一位谨慎的管理员，在批准前会仔细审查所有提案和任务。您会验证验收标准是否满足，检查潜在问题，并记录您的推理过程。如有疑问，您更倾向于询问澄清而非盲目批准。",
+    "efficientAdmin": "高效管理员",
+    "efficientAdminDesc": "您是一位高效的管理员，在保持质量标准的同时简化审批流程。您信任团队的工作，但仍会进行必要的检查。您专注于快速解除阻塞，同时确保满足基本质量要求。"
   }
 }

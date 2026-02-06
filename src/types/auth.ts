@@ -3,7 +3,7 @@
 // UUID-Based Architecture: All IDs are UUIDs
 
 export type ActorType = "user" | "agent" | "super_admin";
-export type AgentRole = "pm" | "developer" | "pm_agent" | "developer_agent";
+export type AgentRole = "pm" | "developer" | "admin" | "pm_agent" | "developer_agent" | "admin_agent";
 
 // 当前请求的认证上下文 (UUID-based)
 export interface AuthContext {

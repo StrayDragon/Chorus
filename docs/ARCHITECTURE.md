@@ -1,6 +1,6 @@
 # Project Chorus - 技术架构文档
 
-**版本**: 1.5
+**版本**: 1.6
 **更新日期**: 2026-02-06
 
 ---
@@ -25,18 +25,23 @@ Chorus 是一个 AI Agent 与人类协作的平台，实现 AI-DLC（AI-Driven D
 ### 1.3 参与者
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Chorus Platform                        │
-└─────────────────────────────────────────────────────────────┘
-        ↑               ↑               ↑
-        │               │               │
-   ┌────┴────┐    ┌─────┴─────┐   ┌─────┴─────┐
-   │  Human  │    │ PM Agent  │   │ Personal  │
-   │         │    │           │   │  Agent    │
-   └─────────┘    └───────────┘   └───────────┘
-   Web UI 访问     Claude Code     Claude Code
-   审批提议        提议任务        执行任务
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Chorus Platform                              │
+└─────────────────────────────────────────────────────────────────────┘
+        ↑               ↑               ↑               ↑
+        │               │               │               │
+   ┌────┴────┐    ┌─────┴─────┐   ┌─────┴─────┐   ┌─────┴─────┐
+   │  Human  │    │ PM Agent  │   │ Developer │   │  Admin    │
+   │         │    │           │   │  Agent    │   │  Agent    │
+   └─────────┘    └───────────┘   └───────────┘   └───────────┘
+   Web UI 访问     Claude Code     Claude Code     Claude Code
+   审批提议        提议任务        执行任务        代理审批
 ```
+
+**Agent 角色说明**：
+- **PM Agent**: 需求分析、任务拆解、创建提议
+- **Developer Agent**: 执行任务、报告工作、提交验证
+- **Admin Agent**: 代理人类执行审批 Proposal、验证 Task、创建 Project 等操作（⚠️ 危险权限）
 
 ---
 
@@ -832,6 +837,27 @@ Header: Authorization: Bearer {api_key}
 | `chorus_pm_identify_risks` | 识别风险和阻塞 |
 
 PM Agent 同时拥有 Developer Agent 的所有工具（全能角色）。
+
+#### Admin Agent 工具（代理人类操作）
+
+Admin Agent 代表人类执行审批、验证、项目管理等操作。
+
+| 工具 | 描述 |
+|-----|------|
+| `chorus_admin_create_project` | 创建新项目 |
+| `chorus_admin_approve_proposal` | 审批通过 Proposal |
+| `chorus_admin_reject_proposal` | 拒绝 Proposal |
+| `chorus_admin_verify_task` | 验证 Task（to_verify → done） |
+| `chorus_admin_reopen_task` | 重新打开 Task（to_verify → in_progress） |
+| `chorus_admin_close_task` | 关闭 Task（any → closed） |
+| `chorus_admin_close_idea` | 关闭 Idea（any → closed） |
+| `chorus_admin_delete_idea` | 删除 Idea |
+| `chorus_admin_delete_task` | 删除 Task |
+| `chorus_admin_delete_document` | 删除 Document |
+
+Admin Agent 同时拥有 PM Agent 和 Developer Agent 的所有工具（最高权限角色）。
+
+**⚠️ 安全警告**：Admin Agent 拥有人类级别的权限，可以执行审批、验证等关键操作。创建此类型的 Agent 需要谨慎，仅在需要自动化人类审批流程时使用。
 
 #### Proposal 输入/输出说明
 
