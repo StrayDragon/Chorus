@@ -76,19 +76,19 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   }
 
   const body = await parseBody<{
-    agentId: number;
+    agentUuid: string;
     name?: string;
     expiresAt?: string;
   }>(request);
 
   // 验证必填字段
-  if (!body.agentId) {
-    return errors.validationError({ agentId: "Agent ID is required" });
+  if (!body.agentUuid) {
+    return errors.validationError({ agentUuid: "Agent UUID is required" });
   }
 
   // 验证 Agent 存在
   const agent = await prisma.agent.findFirst({
-    where: { id: body.agentId, companyId: auth.companyId },
+    where: { uuid: body.agentUuid, companyId: auth.companyId },
     select: { id: true, uuid: true, name: true, roles: true },
   });
 

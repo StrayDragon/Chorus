@@ -6,6 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, Key, Check, X, Copy, Globe } from "lucide-react";
 import { authFetch } from "@/lib/auth-client";
 import { useLocale } from "@/contexts/locale-context";
@@ -74,6 +84,9 @@ export default function SettingsPage() {
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
 
   // Form state
   const [newKeyName, setNewKeyName] = useState("");
@@ -159,26 +172,42 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteKey = async (uuid: string) => {
-    if (!confirm("Are you sure you want to delete this API key?")) return;
+  const openDeleteConfirm = (uuid: string) => {
+    setKeyToDelete(uuid);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteKey = async () => {
+    if (!keyToDelete) return;
 
     try {
-      const response = await authFetch(`/api/api-keys/${uuid}`, {
+      const response = await authFetch(`/api/api-keys/${keyToDelete}`, {
         method: "DELETE",
       });
       const data = await response.json();
       if (data.success) {
-        setApiKeys(apiKeys.filter((k) => k.uuid !== uuid));
+        setApiKeys(apiKeys.filter((k) => k.uuid !== keyToDelete));
       }
     } catch (error) {
       console.error("Failed to delete API key:", error);
+    } finally {
+      setDeleteConfirmOpen(false);
+      setKeyToDelete(null);
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyToClipboard = async (text: string, keyId?: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      if (keyId) {
+        setCopiedKeyId(keyId);
+        setTimeout(() => setCopiedKeyId(null), 2000);
+      }
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
+    }
   };
 
   const resetForm = () => {
@@ -315,15 +344,15 @@ export default function SettingsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(key.keyPrefix + "...")}
+                      onClick={() => copyToClipboard(key.keyPrefix + "...", key.uuid)}
                     >
                       <Copy className="mr-1.5 h-3 w-3" />
-                      {t("common.copy")}
+                      {copiedKeyId === key.uuid ? t("common.copied") : t("common.copy")}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteKey(key.uuid)}
+                      onClick={() => openDeleteConfirm(key.uuid)}
                       className="text-destructive hover:text-destructive"
                     >
                       {t("common.delete")}
@@ -578,6 +607,27 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("settings.confirmDeleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("settings.confirmDeleteDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteKey}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

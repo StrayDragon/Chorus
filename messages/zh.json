@@ -64,7 +64,9 @@
     "personaHint": "您可以编辑上面的文字或编写自己的自定义人设。",
     "personaHintNoRoles": "为您的智能体编写自定义人设。",
     "creating": "创建中...",
-    "confirmDelete": "确定要删除此 API 密钥吗？"
+    "confirmDelete": "确定要删除此 API 密钥吗？",
+    "confirmDeleteTitle": "删除 API 密钥",
+    "confirmDeleteDesc": "确定要删除此 API 密钥吗？此操作无法撤销。"
   },
   "login": {
     "title": "Chorus",
