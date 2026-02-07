@@ -499,7 +499,9 @@
     "ideasSubtext": "{open} 待处理, {inProgress} 进行中",
     "tasksSubtext": "{open} 待处理, {toVerify} 待验证",
     "documentsSubtext": "PRD、规格说明、笔记",
-    "proposalsSubtext": "{pending} 待审核"
+    "proposalsSubtext": "{pending} 待审核",
+    "deleteProject": "删除项目",
+    "deleteProjectConfirm": "确定要删除「{name}」吗？此操作无法撤销，将永久删除所有关联的想法、提案、任务、文档和动态。"
   },
   "personas": {
     "devPm": "开发者导向 PM",

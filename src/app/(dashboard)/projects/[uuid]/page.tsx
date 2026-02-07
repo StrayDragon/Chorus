@@ -6,9 +6,10 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, LayoutGrid, FileText, ClipboardList, Settings, ChevronRight, Plus } from "lucide-react";
+import { Lightbulb, LayoutGrid, FileText, ClipboardList, ChevronRight, Plus } from "lucide-react";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getProject, getProjectStats } from "@/services/project.service";
+import { ProjectActions } from "./project-actions";
 
 interface PageProps {
   params: Promise<{ uuid: string }>;
@@ -91,13 +92,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
               </p>
             )}
           </div>
-          <Button
-            variant="outline"
-            className="border-[#E5E0D8] text-[#6B6B6B] hover:bg-[#F5F2EC]"
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            {t("projectOverview.settings")}
-          </Button>
+          <ProjectActions projectUuid={uuid} projectName={project.name} />
         </div>
       </div>
 

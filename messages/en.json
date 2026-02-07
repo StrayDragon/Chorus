@@ -498,7 +498,9 @@
     "ideasSubtext": "{open} open, {inProgress} in progress",
     "tasksSubtext": "{open} open, {toVerify} to verify",
     "documentsSubtext": "PRDs, specs, notes",
-    "proposalsSubtext": "{pending} pending review"
+    "proposalsSubtext": "{pending} pending review",
+    "deleteProject": "Delete Project",
+    "deleteProjectConfirm": "Are you sure you want to delete \"{name}\"? This action cannot be undone and will permanently delete all associated ideas, proposals, tasks, documents, and activity."
   },
   "personas": {
     "devPm": "Dev-focused PM",
