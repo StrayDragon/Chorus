@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -69,7 +69,18 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
   const t = useTranslations();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskUuid, setSelectedTaskUuid] = useState<string | null>(null);
+
+  // Sync local state when server data changes (after router.refresh())
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
+
+  // Derive selectedTask from current tasks — always in sync
+  const selectedTask = useMemo(
+    () => (selectedTaskUuid ? tasks.find((t) => t.uuid === selectedTaskUuid) ?? null : null),
+    [selectedTaskUuid, tasks]
+  );
 
   const getTasksForColumn = (statuses: string[]) => {
     return tasks.filter((task) => statuses.includes(task.status));
@@ -210,7 +221,7 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
                               {...provided.dragHandleProps}
                               onClick={() => {
                                 if (!snapshot.isDragging) {
-                                  setSelectedTask(task);
+                                  setSelectedTaskUuid(task.uuid);
                                 }
                               }}
                             >
@@ -310,7 +321,7 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
         task={selectedTask}
         projectUuid={projectUuid}
         currentUserUuid={currentUserUuid}
-        onClose={() => setSelectedTask(null)}
+        onClose={() => setSelectedTaskUuid(null)}
       />
     )}
     </>

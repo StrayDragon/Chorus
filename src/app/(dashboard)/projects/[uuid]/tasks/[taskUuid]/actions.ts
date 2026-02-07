@@ -19,8 +19,8 @@ export async function claimTaskAction(taskUuid: string) {
       return { success: false, error: "Task not found" };
     }
 
-    // 只有 open 状态的 task 可以被认领
-    if (task.status !== "open") {
+    // 只有 open 或 assigned 状态的 task 可以被认领/重新分配
+    if (task.status !== "open" && task.status !== "assigned") {
       return { success: false, error: "Task is not available for claiming" };
     }
 
@@ -67,7 +67,7 @@ export async function claimTaskToAgentAction(taskUuid: string, agentUuid: string
       return { success: false, error: "Task not found" };
     }
 
-    if (task.status !== "open") {
+    if (task.status !== "open" && task.status !== "assigned") {
       return { success: false, error: "Task is not available for claiming" };
     }
 
@@ -114,8 +114,8 @@ export async function releaseTaskAction(taskUuid: string) {
       return { success: false, error: "Task not found" };
     }
 
-    // 只有 assigned 状态且是自己认领的 task 才能释放
-    if (task.status !== "assigned") {
+    // 只有 assigned 或 in_progress 状态的 task 才能释放
+    if (task.status !== "assigned" && task.status !== "in_progress") {
       return { success: false, error: "Task is not in assigned status" };
     }
 
@@ -222,7 +222,7 @@ export async function claimTaskToUserAction(taskUuid: string, userUuid: string) 
       return { success: false, error: "Task not found" };
     }
 
-    if (task.status !== "open") {
+    if (task.status !== "open" && task.status !== "assigned") {
       return { success: false, error: "Task is not available for assigning" };
     }
 

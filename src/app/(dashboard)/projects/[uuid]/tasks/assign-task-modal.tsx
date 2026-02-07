@@ -71,6 +71,7 @@ export function AssignTaskModal({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [users, setUsers] = useState<CompanyUser[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const isAssigned = !!task.assignee;
 
@@ -90,6 +91,7 @@ export function AssignTaskModal({
 
   const handleSubmit = async () => {
     setIsLoading(true);
+    setError(null);
     let result;
 
     if (selectedOption === "self") {
@@ -109,6 +111,8 @@ export function AssignTaskModal({
     if (result?.success) {
       onClose();
       router.refresh();
+    } else if (result?.error) {
+      setError(result.error);
     }
   };
 
@@ -159,6 +163,12 @@ export function AssignTaskModal({
               <p className="text-xs text-[#1976D2]">
                 {t("common.currentAssignee")}: <span className="font-medium">{task.assignee?.name}</span>
               </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-lg bg-[#FEE2E2] p-3">
+              <p className="text-xs text-[#D32F2F]">{error}</p>
             </div>
           )}
 
