@@ -5,6 +5,17 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import {
+  ClipboardList,
+  ChevronRight,
+  Monitor,
+  FileText,
+  ListTodo,
+  Lightbulb,
+  Pencil,
+  AlertCircle,
+  Calendar,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Streamdown } from "streamdown";
@@ -13,6 +24,7 @@ import { getProposal, type DocumentDraft, type TaskDraft } from "@/services/prop
 import { projectExists } from "@/services/project.service";
 import { ProposalActions } from "./proposal-actions";
 import { ProposalEditor } from "./proposal-editor";
+import { ProposalComments } from "./proposal-comments";
 
 // 状态颜色配置
 const statusColors: Record<string, string> = {
@@ -33,9 +45,9 @@ const statusI18nKeys: Record<string, string> = {
 };
 
 // 输入类型到翻译 key 的映射
-const inputTypeI18nKeys: Record<string, { key: string; icon: string }> = {
-  idea: { key: "ideas.title", icon: "💡" },
-  document: { key: "documents.title", icon: "📄" },
+const inputTypeI18nKeys: Record<string, { key: string }> = {
+  idea: { key: "ideas.title" },
+  document: { key: "documents.title" },
 };
 
 interface PageProps {
@@ -80,26 +92,15 @@ export default async function ProposalDetailPage({ params }: PageProps) {
         <Link href={`/projects/${projectUuid}/proposals`} className="text-[#6B6B6B] hover:text-[#2C2C2C]">
           {t("nav.proposals")}
         </Link>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4 text-[#9A9A9A]"
-        >
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <ChevronRight className="h-4 w-4 text-[#9A9A9A]" />
         <span className="text-[#2C2C2C]">{proposal.title}</span>
       </div>
 
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC] text-2xl">
-            📋
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC]">
+            <ClipboardList className="h-6 w-6 text-[#C67A52]" />
           </div>
           <div>
             <div className="mb-1 flex items-center gap-3">
@@ -117,19 +118,7 @@ export default async function ProposalDetailPage({ params }: PageProps) {
                 <>
                   <span>·</span>
                   <span className="flex items-center gap-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-3 w-3"
-                    >
-                      <path d="M12 8V4H8" />
-                      <rect width="16" height="12" x="4" y="8" rx="2" />
-                    </svg>
+                    <Monitor className="h-3 w-3" />
                     {proposal.createdBy.name}
                   </span>
                 </>
@@ -213,19 +202,19 @@ export default async function ProposalDetailPage({ params }: PageProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-[#9A9A9A]">
-                  <span>📄</span> {t("proposals.documents")}
+                  <FileText className="h-4 w-4" /> {t("proposals.documents")}
                 </span>
                 <span className="font-medium text-[#2C2C2C]">{documentDrafts?.length || 0}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-[#9A9A9A]">
-                  <span>📝</span> {t("proposals.tasks")}
+                  <ListTodo className="h-4 w-4" /> {t("proposals.tasks")}
                 </span>
                 <span className="font-medium text-[#2C2C2C]">{taskDrafts?.length || 0}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-[#9A9A9A]">
-                  <span>💡</span> {t("proposals.inputs")}
+                  <Lightbulb className="h-4 w-4" /> {t("proposals.inputs")}
                 </span>
                 <span className="font-medium text-[#2C2C2C]">{proposal.inputUuids?.length || 0}</span>
               </div>
@@ -263,23 +252,14 @@ export default async function ProposalDetailPage({ params }: PageProps) {
             </Card>
           )}
 
+          {/* Comments */}
+          <ProposalComments proposalUuid={proposalUuid} />
+
           {/* Draft Notice */}
           {proposal.status === "draft" && (
             <Card className="border-[#6B6B6B] bg-[#F5F5F5] p-4">
               <div className="flex items-center gap-2 text-sm text-[#6B6B6B]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
+                <Pencil className="h-4 w-4" />
                 {t("proposals.draftStatus")}
               </div>
               <p className="mt-2 text-xs text-[#6B6B6B]">
@@ -292,20 +272,7 @@ export default async function ProposalDetailPage({ params }: PageProps) {
           {proposal.status === "pending" && (
             <Card className="border-[#C67A52] bg-[#FFFBF8] p-4">
               <div className="flex items-center gap-2 text-sm text-[#E65100]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
+                <AlertCircle className="h-4 w-4" />
                 {t("proposals.awaitingReview")}
               </div>
               <p className="mt-2 text-xs text-[#6B6B6B]">

@@ -3,10 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { FileText, ListTodo } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -218,7 +221,7 @@ export function ProposalEditor({
       <Card className="border-[#E5E0D8] p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-medium text-[#2C2C2C]">
-            <span>📄</span>
+            <FileText className="h-5 w-5 text-[#C67A52]" />
             {t("proposals.documentDrafts")} ({documentDrafts?.length || 0})
           </h2>
           {canEdit && (
@@ -282,7 +285,7 @@ export function ProposalEditor({
       <Card className="border-[#E5E0D8] p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-medium text-[#2C2C2C]">
-            <span>📝</span>
+            <ListTodo className="h-5 w-5 text-[#C67A52]" />
             {t("proposals.taskDrafts")} ({taskDrafts?.length || 0})
           </h2>
           {canEdit && (
@@ -363,9 +366,9 @@ export function ProposalEditor({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+              <Label className="mb-2 block text-[#6B6B6B]">
                 {t("proposals.documentType")}
-              </label>
+              </Label>
               <Select value={docType} onValueChange={setDocType}>
                 <SelectTrigger className="border-[#E5E0D8]">
                   <SelectValue />
@@ -380,9 +383,9 @@ export function ProposalEditor({
               </Select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+              <Label className="mb-2 block text-[#6B6B6B]">
                 {t("proposals.documentTitle")} *
-              </label>
+              </Label>
               <Input
                 value={docTitle}
                 onChange={(e) => setDocTitle(e.target.value)}
@@ -391,13 +394,13 @@ export function ProposalEditor({
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+              <Label className="mb-2 block text-[#6B6B6B]">
                 {t("proposals.documentContent")}
-              </label>
-              <textarea
+              </Label>
+              <Textarea
                 value={docContent}
                 onChange={(e) => setDocContent(e.target.value)}
-                className="h-64 w-full resize-none rounded-lg border border-[#E5E0D8] p-3 text-sm font-mono focus:border-[#C67A52] focus:outline-none focus:ring-1 focus:ring-[#C67A52]"
+                className="h-64 resize-none border-[#E5E0D8] font-mono"
                 placeholder="# Document Title&#10;&#10;Write your content in Markdown..."
               />
             </div>
@@ -435,9 +438,9 @@ export function ProposalEditor({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+              <Label className="mb-2 block text-[#6B6B6B]">
                 {t("proposals.taskTitle")} *
-              </label>
+              </Label>
               <Input
                 value={taskTitle}
                 onChange={(e) => setTaskTitle(e.target.value)}
@@ -446,21 +449,21 @@ export function ProposalEditor({
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+              <Label className="mb-2 block text-[#6B6B6B]">
                 {t("proposals.taskDescription")}
-              </label>
-              <textarea
+              </Label>
+              <Textarea
                 value={taskDescription}
                 onChange={(e) => setTaskDescription(e.target.value)}
-                className="h-24 w-full resize-none rounded-lg border border-[#E5E0D8] p-3 text-sm focus:border-[#C67A52] focus:outline-none focus:ring-1 focus:ring-[#C67A52]"
+                className="h-24 resize-none border-[#E5E0D8]"
                 placeholder={t("proposals.descriptionPlaceholder")}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+                <Label className="mb-2 block text-[#6B6B6B]">
                   {t("proposals.taskPriority")}
-                </label>
+                </Label>
                 <Select value={taskPriority} onValueChange={setTaskPriority}>
                   <SelectTrigger className="border-[#E5E0D8]">
                     <SelectValue />
@@ -473,9 +476,9 @@ export function ProposalEditor({
                 </Select>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+                <Label className="mb-2 block text-[#6B6B6B]">
                   {t("proposals.taskStoryPoints")}
-                </label>
+                </Label>
                 <Input
                   type="number"
                   min="0"
@@ -488,13 +491,13 @@ export function ProposalEditor({
               </div>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+              <Label className="mb-2 block text-[#6B6B6B]">
                 {t("proposals.taskAcceptanceCriteria")}
-              </label>
-              <textarea
+              </Label>
+              <Textarea
                 value={taskAcceptanceCriteria}
                 onChange={(e) => setTaskAcceptanceCriteria(e.target.value)}
-                className="h-32 w-full resize-none rounded-lg border border-[#E5E0D8] p-3 text-sm font-mono focus:border-[#C67A52] focus:outline-none focus:ring-1 focus:ring-[#C67A52]"
+                className="h-32 resize-none border-[#E5E0D8] font-mono"
                 placeholder="- [ ] Criterion 1&#10;- [ ] Criterion 2"
               />
             </div>

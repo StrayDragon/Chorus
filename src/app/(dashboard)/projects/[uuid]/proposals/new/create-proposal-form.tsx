@@ -3,10 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { createProposalAction } from "../actions";
 
 interface Idea {
@@ -83,9 +86,9 @@ export function CreateProposalForm({
         </h2>
         <div className="space-y-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+            <Label className="mb-2 block text-[#6B6B6B]">
               {t("proposals.title")} *
-            </label>
+            </Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -94,14 +97,14 @@ export function CreateProposalForm({
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium text-[#6B6B6B]">
+            <Label className="mb-2 block text-[#6B6B6B]">
               {t("common.description")}
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t("proposals.descriptionPlaceholder")}
-              className="h-24 w-full resize-none rounded-lg border border-[#E5E0D8] p-3 text-sm focus:border-[#C67A52] focus:outline-none focus:ring-1 focus:ring-[#C67A52]"
+              className="h-24 resize-none border-[#E5E0D8]"
             />
           </div>
         </div>
@@ -135,18 +138,7 @@ export function CreateProposalForm({
                     }`}
                   >
                     {selectedIdeaUuids.includes(idea.uuid) && (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                      <Check className="h-3 w-3" strokeWidth={3} />
                     )}
                   </div>
                   <span className="font-medium text-[#2C2C2C]">{idea.title}</span>
