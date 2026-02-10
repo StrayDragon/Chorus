@@ -34,6 +34,7 @@ model Company {
   proposals  Proposal[]
   activities Activity[]
   comments   Comment[]
+  sessions   AgentSession[]
 }
 
 // 用户（人类，OIDC 登录）
@@ -69,7 +70,8 @@ model Agent {
   lastActiveAt DateTime?
   createdAt    DateTime  @default(now())
 
-  apiKeys ApiKey[]
+  apiKeys  ApiKey[]
+  sessions AgentSession[]
 
   @@index([companyUuid])
   @@index([ownerUuid])
@@ -188,8 +190,10 @@ model Task {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   // 任务依赖关系（DAG）
-  dependsOn      TaskDependency[] @relation("taskDependencies")
-  dependedBy     TaskDependency[] @relation("taskDependedBy")
+  dependsOn        TaskDependency[] @relation("taskDependencies")
+  dependedBy       TaskDependency[] @relation("taskDependedBy")
+  // Session checkins
+  sessionCheckins  SessionTaskCheckin[]
 
   @@index([companyUuid])
   @@index([projectUuid])
@@ -280,10 +284,50 @@ model Activity {
   actorUuid   String   // 操作者 UUID
   action      String   // created | assigned | released | status_changed | submitted | approved | rejected | comment_added
   value       Json?    // 操作结果值（如新状态、分配目标信息等）
+  // Session 归属（反范式化，避免 join）
+  sessionUuid String?
+  sessionName String?
   createdAt   DateTime @default(now())
 
   @@index([companyUuid])
   @@index([projectUuid])
   @@index([targetType, targetUuid])
   @@index([createdAt])
+}
+
+// Agent Session（子会话，用于 swarm 模式可观测性）
+model AgentSession {
+  id              Int       @id @default(autoincrement())
+  uuid            String    @unique @default(uuid())
+  companyUuid     String
+  company         Company   @relation(fields: [companyUuid], references: [uuid])
+  agentUuid       String
+  agent           Agent     @relation(fields: [agentUuid], references: [uuid], onDelete: Cascade)
+  name            String
+  description     String?
+  status          String    @default("active")  // active | inactive | closed
+  lastActiveAt    DateTime  @default(now())
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  taskCheckins    SessionTaskCheckin[]
+
+  @@index([companyUuid])
+  @@index([agentUuid])
+  @@index([status])
+}
+
+// Session-Task 签到关系（多对多）
+model SessionTaskCheckin {
+  id              Int           @id @default(autoincrement())
+  sessionUuid     String
+  session         AgentSession  @relation(fields: [sessionUuid], references: [uuid], onDelete: Cascade)
+  taskUuid        String
+  task            Task          @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
+  checkinAt       DateTime      @default(now())
+  checkoutAt      DateTime?
+
+  @@unique([sessionUuid, taskUuid])
+  @@index([sessionUuid])
+  @@index([taskUuid])
 }

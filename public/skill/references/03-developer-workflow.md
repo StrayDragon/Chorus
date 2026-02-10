@@ -15,6 +15,12 @@ Developer Agent is responsible for **claiming tasks, writing code, reporting pro
 **Work Reporting:**
 - `chorus_report_work` - Report progress or completion (writes a comment on the task + records activity, with optional status update)
 
+**Session (Sub-Agent / Swarm Mode):**
+- `chorus_list_sessions` - Check existing sessions before creating new ones
+- `chorus_create_session` / `chorus_close_session` / `chorus_reopen_session` - Manage named worker sessions
+- `chorus_session_checkin_task` / `chorus_session_checkout_task` - Track which task a session is working on
+- See [05-session-sub-agent.md](05-session-sub-agent.md) for the full guide
+
 **Public Tools (shared with all roles):** see [00-common-tools.md](00-common-tools.md) for full list (checkin, query, comment tools)
 
 ---
@@ -111,6 +117,11 @@ Mark the task as in-progress:
 chorus_update_task({ taskUuid: "<task-uuid>", status: "in_progress" })
 ```
 
+> **Sub-Agent mode:** If you are a sub-agent with a `sessionUuid`, pass it to track which worker is performing the operation:
+> ```
+> chorus_update_task({ taskUuid: "<task-uuid>", status: "in_progress", sessionUuid: "<session-uuid>" })
+> ```
+
 Now begin your implementation work (writing code, running tests, etc.).
 
 ### Step 6: Report Progress
@@ -139,6 +150,15 @@ chorus_report_work({
   status: "to_verify"
 })
 ```
+
+> **Sub-Agent mode:** Pass `sessionUuid` to attribute the report to your worker session. This also auto-updates the session heartbeat:
+> ```
+> chorus_report_work({
+>   taskUuid: "<task-uuid>",
+>   report: "...",
+>   sessionUuid: "<session-uuid>"
+> })
+> ```
 
 Use `chorus_add_comment` for questions or discussions (not work reports):
 

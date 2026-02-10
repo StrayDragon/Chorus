@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { moveTaskToColumnAction } from "./actions";
 import { TaskDetailPanel } from "./task-detail-panel";
+import { getTaskSessionsAction } from "./session-actions";
 
 interface Task {
   uuid: string;
@@ -70,10 +71,32 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [selectedTaskUuid, setSelectedTaskUuid] = useState<string | null>(null);
+  const [workerCounts, setWorkerCounts] = useState<Record<string, number>>({});
 
   // Sync local state when server data changes (after router.refresh())
   useEffect(() => {
     setTasks(initialTasks);
+  }, [initialTasks]);
+
+  // Fetch active worker counts for in-progress tasks
+  useEffect(() => {
+    const inProgressTasks = initialTasks.filter(
+      (t) => t.status === "in_progress" || t.status === "assigned"
+    );
+    if (inProgressTasks.length === 0) return;
+
+    Promise.all(
+      inProgressTasks.map(async (task) => {
+        const result = await getTaskSessionsAction(task.uuid);
+        return { uuid: task.uuid, count: result.data?.length || 0 };
+      })
+    ).then((results) => {
+      const counts: Record<string, number> = {};
+      results.forEach((r) => {
+        if (r.count > 0) counts[r.uuid] = r.count;
+      });
+      setWorkerCounts(counts);
+    });
   }, [initialTasks]);
 
   // Derive selectedTask from current tasks — always in sync
@@ -297,6 +320,12 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
                                     </span>
                                   ) : (
                                     <span>{t("common.unassigned")}</span>
+                                  )}
+                                  {workerCounts[task.uuid] > 0 && (
+                                    <Badge variant="outline" className="h-4 gap-1 border-green-300 px-1.5 text-[10px] text-green-700">
+                                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+                                      {t("sessions.workerCount", { count: workerCounts[task.uuid] })}
+                                    </Badge>
                                   )}
                                 </div>
                               </Card>

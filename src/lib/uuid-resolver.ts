@@ -149,6 +149,15 @@ export async function formatReview(
   };
 }
 
+// 根据 UUID 获取 Session 名称
+export async function getSessionName(sessionUuid: string): Promise<string | null> {
+  const session = await prisma.agentSession.findUnique({
+    where: { uuid: sessionUuid },
+    select: { name: true },
+  });
+  return session?.name ?? null;
+}
+
 // 验证目标实体是否存在（直接使用 UUID）
 export async function validateTargetExists(
   targetType: TargetType,

@@ -17,9 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Key, Check, X, Globe, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Plus, Key, Check, X, Globe, AlertTriangle, ShieldAlert, ChevronDown, ChevronRight, Activity } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useLocale } from "@/contexts/locale-context";
-import { getApiKeysAction, createAgentAndKeyAction, deleteApiKeyAction } from "./actions";
+import { getApiKeysAction, createAgentAndKeyAction, deleteApiKeyAction, getAgentSessionsAction, closeSessionAction, reopenSessionAction } from "./actions";
+import type { SessionResponse } from "@/services/session.service";
 import { locales, localeNames, type Locale } from "@/i18n/config";
 
 interface ApiKey {
@@ -30,6 +32,7 @@ interface ApiKey {
   expiresAt: string | null;
   createdAt: string;
   roles: string[];
+  agentUuid: string;
 }
 
 // PM Agent Persona presets (labels and descriptions use i18n keys)
@@ -63,6 +66,11 @@ export default function SettingsPage() {
   const [copied, setCopied] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
+
+  // Session state
+  const [expandedSessions, setExpandedSessions] = useState<Record<string, boolean>>({});
+  const [agentSessions, setAgentSessions] = useState<Record<string, SessionResponse[]>>({});
+  const [loadingSessions, setLoadingSessions] = useState<Record<string, boolean>>({});
 
   // Form state
   const [newKeyName, setNewKeyName] = useState("");
@@ -171,6 +179,44 @@ export default function SettingsPage() {
   const closeModal = () => {
     setShowModal(false);
     resetForm();
+  };
+
+  const toggleSessions = async (agentUuid: string) => {
+    const isExpanded = expandedSessions[agentUuid];
+    setExpandedSessions((prev) => ({ ...prev, [agentUuid]: !isExpanded }));
+
+    if (!isExpanded && !agentSessions[agentUuid]) {
+      setLoadingSessions((prev) => ({ ...prev, [agentUuid]: true }));
+      const result = await getAgentSessionsAction(agentUuid);
+      if (result.success && result.data) {
+        setAgentSessions((prev) => ({ ...prev, [agentUuid]: result.data! }));
+      }
+      setLoadingSessions((prev) => ({ ...prev, [agentUuid]: false }));
+    }
+  };
+
+  const handleCloseSession = async (sessionUuid: string, agentUuid: string) => {
+    const result = await closeSessionAction(sessionUuid);
+    if (result.success) {
+      setAgentSessions((prev) => ({
+        ...prev,
+        [agentUuid]: (prev[agentUuid] || []).map((s) =>
+          s.uuid === sessionUuid ? { ...s, status: "closed" } : s
+        ),
+      }));
+    }
+  };
+
+  const handleReopenSession = async (sessionUuid: string, agentUuid: string) => {
+    const result = await reopenSessionAction(sessionUuid);
+    if (result.success) {
+      setAgentSessions((prev) => ({
+        ...prev,
+        [agentUuid]: (prev[agentUuid] || []).map((s) =>
+          s.uuid === sessionUuid ? { ...s, status: "active", lastActiveAt: new Date().toISOString() } : s
+        ),
+      }));
+    }
   };
 
   // Get available persona presets based on selected roles
@@ -378,6 +424,95 @@ export default function SettingsPage() {
                       {t("settings.adminAgent")}
                     </span>
                   </div>
+                </div>
+
+                {/* Sessions Section */}
+                <div className="mt-4 border-t border-border pt-3">
+                  <button
+                    onClick={() => toggleSessions(key.agentUuid)}
+                    className="flex w-full items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {expandedSessions[key.agentUuid] ? (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    )}
+                    <Activity className="h-3.5 w-3.5" />
+                    <span>{t("sessions.title")}</span>
+                    {agentSessions[key.agentUuid] && (
+                      <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">
+                        {agentSessions[key.agentUuid].filter((s) => s.status === "active").length}
+                      </Badge>
+                    )}
+                  </button>
+
+                  {expandedSessions[key.agentUuid] && (
+                    <div className="mt-2 space-y-2">
+                      {loadingSessions[key.agentUuid] ? (
+                        <div className="text-xs text-muted-foreground py-2">{t("common.loading")}</div>
+                      ) : !agentSessions[key.agentUuid]?.length ? (
+                        <div className="text-xs text-muted-foreground py-2 italic">{t("sessions.noSessions")}</div>
+                      ) : (
+                        agentSessions[key.agentUuid].map((session) => (
+                          <div
+                            key={session.uuid}
+                            className={`flex items-center justify-between rounded-lg p-2.5 text-xs ${
+                              session.status === "closed"
+                                ? "bg-muted/50 text-muted-foreground"
+                                : "bg-secondary"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div
+                                className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                                  session.status === "active"
+                                    ? "bg-green-500"
+                                    : session.status === "inactive"
+                                      ? "bg-yellow-500"
+                                      : "bg-gray-400"
+                                }`}
+                              />
+                              <span className="font-medium truncate">{session.name}</span>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] h-4 px-1 ${
+                                  session.status === "active"
+                                    ? "border-green-300 text-green-700"
+                                    : session.status === "inactive"
+                                      ? "border-yellow-300 text-yellow-700"
+                                      : "border-gray-300 text-gray-500"
+                                }`}
+                              >
+                                {t(`sessions.status${session.status.charAt(0).toUpperCase() + session.status.slice(1)}`)}
+                              </Badge>
+                              <span className="text-muted-foreground">
+                                {t("sessions.checkins", { count: session.checkins.length })}
+                              </span>
+                            </div>
+                            {session.status === "closed" ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700"
+                                onClick={() => handleReopenSession(session.uuid, key.agentUuid)}
+                              >
+                                {t("sessions.reopen")}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] text-destructive hover:text-destructive"
+                                onClick={() => handleCloseSession(session.uuid, key.agentUuid)}
+                              >
+                                {t("sessions.close")}
+                              </Button>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )})}

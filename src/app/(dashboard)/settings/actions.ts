@@ -9,6 +9,12 @@ import {
   deleteAgent,
   getApiKey,
 } from "@/services/agent.service";
+import {
+  listAgentSessions,
+  closeSession,
+  reopenSession,
+  type SessionResponse,
+} from "@/services/session.service";
 
 interface ApiKeyResponse {
   uuid: string;
@@ -18,6 +24,7 @@ interface ApiKeyResponse {
   expiresAt: string | null;
   createdAt: string;
   roles: string[];
+  agentUuid: string;
 }
 
 export async function getApiKeysAction(): Promise<{
@@ -41,6 +48,7 @@ export async function getApiKeysAction(): Promise<{
       expiresAt: key.expiresAt?.toISOString() || null,
       createdAt: key.createdAt.toISOString(),
       roles: key.agent?.roles || [],
+      agentUuid: key.agent?.uuid || "",
     }));
 
     return { success: true, data };
@@ -111,5 +119,60 @@ export async function deleteApiKeyAction(uuid: string): Promise<{
   } catch (error) {
     console.error("Failed to delete API key:", error);
     return { success: false, error: "Failed to delete API key" };
+  }
+}
+
+export async function getAgentSessionsAction(agentUuid: string): Promise<{
+  success: boolean;
+  data?: SessionResponse[];
+  error?: string;
+}> {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
+  }
+
+  try {
+    const sessions = await listAgentSessions(auth.companyUuid, agentUuid);
+    return { success: true, data: sessions };
+  } catch (error) {
+    console.error("Failed to fetch agent sessions:", error);
+    return { success: false, error: "Failed to fetch agent sessions" };
+  }
+}
+
+export async function closeSessionAction(sessionUuid: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
+  }
+
+  try {
+    await closeSession(auth.companyUuid, sessionUuid);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to close session:", error);
+    return { success: false, error: "Failed to close session" };
+  }
+}
+
+export async function reopenSessionAction(sessionUuid: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
+  }
+
+  try {
+    await reopenSession(auth.companyUuid, sessionUuid);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to reopen session:", error);
+    return { success: false, error: "Failed to reopen session" };
   }
 }

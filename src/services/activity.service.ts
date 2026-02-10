@@ -25,6 +25,8 @@ export interface ActivityCreateParams {
   actorUuid: string;
   action: string;
   value?: unknown;
+  sessionUuid?: string;
+  sessionName?: string;
 }
 
 // 带有 actor 名称的 Activity 响应格式
@@ -36,6 +38,8 @@ export interface ActivityResponse {
   actorType: string;
   actorName: string;
   value: unknown;
+  sessionUuid?: string | null;
+  sessionName?: string | null;
   createdAt: string;
 }
 
@@ -69,6 +73,8 @@ export async function listActivities({
         actorUuid: true,
         action: true,
         value: true,
+        sessionUuid: true,
+        sessionName: true,
         createdAt: true,
       },
     }),
@@ -96,6 +102,8 @@ export async function listActivitiesWithActorNames(
         actorType: activity.actorType,
         actorName: actorName || "Unknown",
         value: activity.value,
+        sessionUuid: activity.sessionUuid,
+        sessionName: activity.sessionName,
         createdAt: activity.createdAt.toISOString(),
       };
     })
@@ -114,6 +122,8 @@ export async function createActivity({
   actorUuid,
   action,
   value,
+  sessionUuid,
+  sessionName,
 }: ActivityCreateParams) {
   return prisma.activity.create({
     data: {
@@ -125,6 +135,8 @@ export async function createActivity({
       actorUuid,
       action,
       value: value || undefined,
+      sessionUuid: sessionUuid || undefined,
+      sessionName: sessionName || undefined,
     },
   });
 }

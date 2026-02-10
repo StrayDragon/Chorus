@@ -6,6 +6,7 @@ import { registerPublicTools } from "./tools/public";
 import { registerPmTools } from "./tools/pm";
 import { registerDeveloperTools } from "./tools/developer";
 import { registerAdminTools } from "./tools/admin";
+import { registerSessionTools } from "./tools/session";
 import type { AgentAuthContext } from "@/types/auth";
 
 // 创建 MCP Server 工厂函数
@@ -17,6 +18,9 @@ export function createMcpServer(auth: AgentAuthContext): McpServer {
 
   // 注册公共工具（所有 Agent 可用）
   registerPublicTools(server, auth);
+
+  // 注册 Session 工具（所有 Agent 可用）
+  registerSessionTools(server, auth);
 
   // 根据角色注册专属工具
   const roles = auth.roles || [];

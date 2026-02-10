@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { X, Pencil, CheckCircle, Play, Eye, Bot, User, Send, FileText, Loader2, Check, Trash2, GitBranch, Plus, ArrowRight } from "lucide-react";
+import { X, Pencil, CheckCircle, Play, Eye, Bot, User, Send, FileText, Loader2, Check, Trash2, GitBranch, Plus, ArrowRight, Activity as ActivityIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,8 @@ import {
   removeTaskDependencyAction,
   getProjectTasksForDependencyAction,
 } from "./[taskUuid]/dependency-actions";
+import { getTaskSessionsAction } from "./session-actions";
+import type { TaskSessionInfo } from "@/services/session.service";
 
 interface DependencyTask {
   uuid: string;
@@ -162,7 +164,11 @@ function getActivityDotColor(action: string): string {
 // 格式化 Activity 消息
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatActivityMessage(activity: ActivityResponse, t: any): string {
-  const { action, actorName } = activity;
+  const actorDisplay = activity.sessionName
+    ? `${activity.actorName} / ${activity.sessionName}`
+    : activity.actorName;
+  const { action } = activity;
+  const actorName = actorDisplay;
 
   switch (action) {
     case "task_created":
@@ -213,6 +219,9 @@ export function TaskDetailPanel({
   const [isLoadingDeps, setIsLoadingDeps] = useState(false);
   const [allProjectTasks, setAllProjectTasks] = useState<DependencyTask[]>([]);
   const [depError, setDepError] = useState<string | null>(null);
+
+  // Active workers (sessions)
+  const [activeWorkers, setActiveWorkers] = useState<TaskSessionInfo[]>([]);
 
   // Pending dependencies for create mode (stored locally until task is created)
   const [pendingDeps, setPendingDeps] = useState<DependencyTask[]>([]);
@@ -271,10 +280,17 @@ export function TaskDetailPanel({
       setAllProjectTasks(projectTasksResult.tasks);
       setIsLoadingDeps(false);
     }
+    async function loadActiveWorkers() {
+      const result = await getTaskSessionsAction(task!.uuid);
+      if (result.success && result.data) {
+        setActiveWorkers(result.data);
+      }
+    }
     loadComments();
     loadActivities();
     loadSource();
     loadDependencies();
+    loadActiveWorkers();
   }, [task?.uuid, task?.proposalUuid, projectUuid]);
 
   // Load project tasks for dependency picker in create mode
@@ -727,6 +743,33 @@ export function TaskDetailPanel({
                     )}
                   </div>
                 </div>
+
+                {/* Active Workers Section */}
+                {activeWorkers.length > 0 && (
+                  <div className="mt-5">
+                    <label className="text-[11px] font-medium uppercase tracking-wide text-[#9A9A9A]">
+                      {t("sessions.activeWorkers")}
+                    </label>
+                    <div className="mt-2 space-y-1.5">
+                      {activeWorkers.map((worker) => (
+                        <div
+                          key={worker.sessionUuid}
+                          className="flex items-center gap-2.5 rounded-lg bg-[#FAF8F4] p-2.5"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium text-[#2C2C2C] truncate">
+                              {worker.sessionName}
+                            </div>
+                            <div className="text-[10px] text-[#9A9A9A]">
+                              {worker.agentName} · {formatRelativeTime(worker.checkinAt)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Description Section */}
                 <div className="mt-5">

@@ -519,5 +519,21 @@
     "carefulAdminDesc": "You are a careful administrator who thoroughly reviews all proposals and tasks before approval. You verify that acceptance criteria are met, check for potential issues, and document your reasoning. When in doubt, you prefer to ask for clarification rather than approve blindly.",
     "efficientAdmin": "Efficient Admin",
     "efficientAdminDesc": "You are an efficient administrator who streamlines the approval process while maintaining quality standards. You trust the team's work but still perform necessary checks. You focus on unblocking work quickly while ensuring basic quality gates are met."
+  },
+  "sessions": {
+    "title": "Sessions",
+    "activeSessions": "Active Sessions",
+    "noSessions": "No sessions",
+    "close": "Close",
+    "reopen": "Reopen",
+    "closeConfirm": "Are you sure you want to close this session?",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "statusClosed": "Closed",
+    "activeWorkers": "Active Workers",
+    "workerCount": "{count} worker(s)",
+    "checkedInSince": "Checked in {time}",
+    "lastActive": "Last active {time}",
+    "checkins": "{count} task(s)"
   }
 }

@@ -24,7 +24,8 @@
       "references/01-setup.md": "/skill/references/01-setup.md",
       "references/02-pm-workflow.md": "/skill/references/02-pm-workflow.md",
       "references/03-developer-workflow.md": "/skill/references/03-developer-workflow.md",
-      "references/04-admin-workflow.md": "/skill/references/04-admin-workflow.md"
+      "references/04-admin-workflow.md": "/skill/references/04-admin-workflow.md",
+      "references/05-session-sub-agent.md": "/skill/references/05-session-sub-agent.md"
     },
     "requires": {
       "mcp": ["chorus"]
@@ -39,7 +40,11 @@
       "verify task",
       "approve proposal",
       "project management",
-      "report work"
+      "report work",
+      "session",
+      "sub-agent",
+      "swarm",
+      "worker"
     ]
   },
   "moltbot": {
@@ -50,7 +55,8 @@
       "references/01-setup.md": "/skill/references/01-setup.md",
       "references/02-pm-workflow.md": "/skill/references/02-pm-workflow.md",
       "references/03-developer-workflow.md": "/skill/references/03-developer-workflow.md",
-      "references/04-admin-workflow.md": "/skill/references/04-admin-workflow.md"
+      "references/04-admin-workflow.md": "/skill/references/04-admin-workflow.md",
+      "references/05-session-sub-agent.md": "/skill/references/05-session-sub-agent.md"
     },
     "requires": {
       "mcp": ["chorus"]
@@ -65,7 +71,11 @@
       "verify task",
       "approve proposal",
       "project management",
-      "report work"
+      "report work",
+      "session",
+      "sub-agent",
+      "swarm",
+      "worker"
     ]
   }
 }

@@ -520,5 +520,21 @@
     "carefulAdminDesc": "您是一位谨慎的管理员，在批准前会仔细审查所有提案和任务。您会验证验收标准是否满足，检查潜在问题，并记录您的推理过程。如有疑问，您更倾向于询问澄清而非盲目批准。",
     "efficientAdmin": "高效管理员",
     "efficientAdminDesc": "您是一位高效的管理员，在保持质量标准的同时简化审批流程。您信任团队的工作，但仍会进行必要的检查。您专注于快速解除阻塞，同时确保满足基本质量要求。"
+  },
+  "sessions": {
+    "title": "会话",
+    "activeSessions": "活跃会话",
+    "noSessions": "暂无会话",
+    "close": "关闭",
+    "reopen": "重新打开",
+    "closeConfirm": "确定要关闭此会话吗？",
+    "statusActive": "活跃",
+    "statusInactive": "不活跃",
+    "statusClosed": "已关闭",
+    "activeWorkers": "活跃工作者",
+    "workerCount": "{count} 个工作者",
+    "checkedInSince": "签入于 {time}",
+    "lastActive": "最后活跃 {time}",
+    "checkins": "{count} 个任务"
   }
 }

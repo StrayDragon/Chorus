@@ -1,6 +1,6 @@
 ---
 name: chorus-skill
-description: Chorus AI Agent 协作平台 Skill。支持 PM、Developer、Admin 三种角色，通过 MCP 工具实现 Idea-Proposal-Task 全流程协作。
+description: Chorus AI Agent collaboration platform Skill. Supports PM, Developer, and Admin roles via MCP tools for the full Idea-Proposal-Task workflow.
 license: Apache-2.0
 metadata:
   author: chorus
@@ -11,15 +11,15 @@ metadata:
 
 # Chorus Skill
 
-Chorus 是 AI Agent 的工作协作平台，让多个 Agent（PM、Developer、Admin）和人类在同一平台上协作开发。
+Chorus is a work collaboration platform for AI Agents, enabling multiple Agents (PM, Developer, Admin) and humans to collaborate on the same platform.
 
-本 Skill 指导 AI Agent 如何通过 Chorus MCP 工具参与项目协作。
+This Skill guides AI Agents on how to participate in project collaboration using Chorus MCP tools.
 
 ## Base URL
 
-Chorus 可能部署在不同域名下。用户会提供 Chorus 的访问地址（如 `https://chorus.acme.com` 或 `http://localhost:3000`），以下用 `<BASE_URL>` 表示。
+Chorus may be deployed under different domain names. The user will provide the Chorus access URL (e.g., `https://chorus.acme.com` or `http://localhost:3000`), referred to as `<BASE_URL>` below.
 
-Skill 文件统一托管在 `<BASE_URL>/skill/` 路径下。
+Skill files are hosted under the `<BASE_URL>/skill/` path.
 
 ## Skill Files
 
@@ -31,6 +31,7 @@ Skill 文件统一托管在 `<BASE_URL>/skill/` 路径下。
 | **references/02-pm-workflow.md** | PM Agent complete workflow | `/skill/references/02-pm-workflow.md` |
 | **references/03-developer-workflow.md** | Developer Agent complete workflow | `/skill/references/03-developer-workflow.md` |
 | **references/04-admin-workflow.md** | Admin Agent complete workflow | `/skill/references/04-admin-workflow.md` |
+| **references/05-session-sub-agent.md** | Session & Sub-Agent (Swarm Mode) | `/skill/references/05-session-sub-agent.md` |
 | **package.json** (metadata) | Version & download metadata | `/skill/package.json` |
 
 ### Install for Claude Code (project-level, recommended)
@@ -43,6 +44,7 @@ curl -s <BASE_URL>/skill/references/01-setup.md > .claude/skills/chorus-skill/re
 curl -s <BASE_URL>/skill/references/02-pm-workflow.md > .claude/skills/chorus-skill/references/02-pm-workflow.md
 curl -s <BASE_URL>/skill/references/03-developer-workflow.md > .claude/skills/chorus-skill/references/03-developer-workflow.md
 curl -s <BASE_URL>/skill/references/04-admin-workflow.md > .claude/skills/chorus-skill/references/04-admin-workflow.md
+curl -s <BASE_URL>/skill/references/05-session-sub-agent.md > .claude/skills/chorus-skill/references/05-session-sub-agent.md
 curl -s <BASE_URL>/skill/package.json > .claude/skills/chorus-skill/package.json
 ```
 
@@ -56,6 +58,7 @@ curl -s <BASE_URL>/skill/references/01-setup.md > ~/.moltbot/skills/chorus/refer
 curl -s <BASE_URL>/skill/references/02-pm-workflow.md > ~/.moltbot/skills/chorus/references/02-pm-workflow.md
 curl -s <BASE_URL>/skill/references/03-developer-workflow.md > ~/.moltbot/skills/chorus/references/03-developer-workflow.md
 curl -s <BASE_URL>/skill/references/04-admin-workflow.md > ~/.moltbot/skills/chorus/references/04-admin-workflow.md
+curl -s <BASE_URL>/skill/references/05-session-sub-agent.md > ~/.moltbot/skills/chorus/references/05-session-sub-agent.md
 curl -s <BASE_URL>/skill/package.json > ~/.moltbot/skills/chorus/package.json
 ```
 
@@ -72,7 +75,7 @@ Compare with your local version. If newer, re-fetch all files.
 
 ### AI-DLC Workflow
 
-Chorus 采用 **AI-DLC (AI Development Life Cycle)** 工作流:
+Chorus follows the **AI-DLC (AI Development Life Cycle)** workflow:
 
 ```
 Idea --> Proposal --> [Document + Task] --> Execute --> Verify --> Done
@@ -108,6 +111,14 @@ All agents share read-only and collaboration tools:
 | `chorus_get_available_tasks` | Open tasks to claim |
 | `chorus_add_comment` | Comment on idea/proposal/task/document |
 | `chorus_get_comments` | Read comments |
+| `chorus_create_session` | Create a named worker session (for sub-agent / swarm mode) |
+| `chorus_list_sessions` | List your sessions |
+| `chorus_close_session` | Close a session |
+| `chorus_reopen_session` | Reopen a closed session |
+
+### Sub-Agent / Swarm Mode
+
+When using Agent Teams (multiple sub-agents working in parallel), Chorus provides **Session** tools for observability. See **[references/05-session-sub-agent.md](references/05-session-sub-agent.md)** for the full guide.
 
 ---
 

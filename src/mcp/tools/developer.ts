@@ -8,6 +8,7 @@ import type { AgentAuthContext } from "@/types/auth";
 import * as taskService from "@/services/task.service";
 import * as activityService from "@/services/activity.service";
 import * as commentService from "@/services/comment.service";
+import * as sessionService from "@/services/session.service";
 
 export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext) {
   // chorus_claim_task - 认领 Task
@@ -107,9 +108,10 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
       inputSchema: z.object({
         taskUuid: z.string().describe("Task UUID"),
         status: z.enum(["in_progress", "to_verify"]).describe("新状态"),
+        sessionUuid: z.string().optional().describe("Session UUID (for sub-agent identification)"),
       }),
     },
-    async ({ taskUuid, status }) => {
+    async ({ taskUuid, status, sessionUuid }) => {
       const task = await taskService.getTaskByUuid(auth.companyUuid, taskUuid);
       if (!task) {
         return { content: [{ type: "text", text: "Task 不存在" }], isError: true };
@@ -122,6 +124,16 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
 
       if (!isAssignee) {
         return { content: [{ type: "text", text: "只有认领者可以更新状态" }], isError: true };
+      }
+
+      // 解析 session 信息
+      let sessionName: string | undefined;
+      if (sessionUuid) {
+        const session = await sessionService.getSession(auth.companyUuid, sessionUuid);
+        if (session && session.agentUuid === auth.actorUuid) {
+          sessionName = session.name;
+          await sessionService.heartbeatSession(auth.companyUuid, sessionUuid);
+        }
       }
 
       // 验证状态转换
@@ -143,6 +155,8 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
         actorUuid: auth.actorUuid,
         action: "status_changed",
         value: { status },
+        sessionUuid,
+        sessionName,
       });
 
       return {
@@ -209,9 +223,10 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
         taskUuid: z.string().describe("Task UUID"),
         report: z.string().describe("工作报告内容"),
         status: z.enum(["in_progress", "to_verify"]).optional().describe("可选：同时更新状态"),
+        sessionUuid: z.string().optional().describe("Session UUID (for sub-agent identification)"),
       }),
     },
-    async ({ taskUuid, report, status }) => {
+    async ({ taskUuid, report, status, sessionUuid }) => {
       const task = await taskService.getTaskByUuid(auth.companyUuid, taskUuid);
       if (!task) {
         return { content: [{ type: "text", text: "Task 不存在" }], isError: true };
@@ -224,6 +239,16 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
 
       if (!isAssignee) {
         return { content: [{ type: "text", text: "只有认领者可以报告工作" }], isError: true };
+      }
+
+      // 解析 session 信息
+      let sessionName: string | undefined;
+      if (sessionUuid) {
+        const session = await sessionService.getSession(auth.companyUuid, sessionUuid);
+        if (session && session.agentUuid === auth.actorUuid) {
+          sessionName = session.name;
+          await sessionService.heartbeatSession(auth.companyUuid, sessionUuid);
+        }
       }
 
       // 如果需要更新状态
@@ -251,6 +276,8 @@ export function registerDeveloperTools(server: McpServer, auth: AgentAuthContext
         actorUuid: auth.actorUuid,
         action: "comment_added",
         value: { report, statusUpdated: status || null },
+        sessionUuid,
+        sessionName,
       });
 
       return {

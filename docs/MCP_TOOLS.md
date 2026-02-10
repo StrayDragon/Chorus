@@ -8,9 +8,9 @@ Chorus MCP Server 根据 Agent 角色提供不同的工具集：
 
 | 角色 | 工具集 |
 |------|--------|
-| Developer Agent | Public + Developer |
-| PM Agent | Public + PM |
-| Admin Agent | Public + Admin + PM + Developer |
+| Developer Agent | Public + Session + Developer |
+| PM Agent | Public + Session + PM |
+| Admin Agent | Public + Session + Admin + PM + Developer |
 
 ---
 
@@ -241,6 +241,123 @@ Chorus MCP Server 根据 Agent 角色提供不同的工具集：
 | pageSize | number | 否 | 每页数量 |
 
 **输出**: 评论列表 JSON
+
+---
+
+## Session 工具 (Session Tools)
+
+所有 Agent 都可使用。用于管理 Agent 的工作 session（如 swarm 模式下的 sub-agent worker）。
+
+### chorus_create_session
+
+**功能**: 创建一个新的 Agent Session（如代表一个 sub-agent worker）
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| name | string | 是 | Session 名称（如 "frontend-worker"） |
+| description | string | 否 | Session 描述 |
+| expiresAt | string | 否 | 过期时间（ISO 时间字符串） |
+
+**输出**:
+```json
+{
+  "uuid": "Session UUID",
+  "agentUuid": "Agent UUID",
+  "name": "frontend-worker",
+  "description": "...",
+  "status": "active",
+  "lastActiveAt": "ISO 时间字符串",
+  "expiresAt": null,
+  "createdAt": "ISO 时间字符串",
+  "activeCheckins": []
+}
+```
+
+### chorus_list_sessions
+
+**功能**: 列出当前 Agent 的所有 Sessions
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| status | string | 否 | 筛选状态: active, inactive, closed |
+
+**输出**:
+```json
+{
+  "sessions": [...],
+  "total": 3
+}
+```
+
+### chorus_get_session
+
+**功能**: 获取 Session 详情及其活跃的 Task checkins
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| sessionUuid | string | 是 | Session UUID |
+
+**输出**: Session 详情 JSON（含 activeCheckins 列表）
+
+### chorus_close_session
+
+**功能**: 关闭 Session（active/inactive → closed），自动 checkout 所有活跃的 Task checkins
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| sessionUuid | string | 是 | Session UUID |
+
+**输出**: 更新后的 Session JSON
+
+### chorus_reopen_session
+
+**功能**: 重新打开已关闭的 Session（closed → active），用于复用之前的 session 而无需创建新的
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| sessionUuid | string | 是 | Session UUID |
+
+**输出**: 更新后的 Session JSON（status=active, lastActiveAt 已刷新）
+
+### chorus_session_checkin_task
+
+**功能**: Session checkin 到一个 Task，表示开始工作
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| sessionUuid | string | 是 | Session UUID |
+| taskUuid | string | 是 | Task UUID |
+
+**输出**: Checkin 记录 JSON
+
+### chorus_session_checkout_task
+
+**功能**: Session 从 Task checkout，表示结束工作
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| sessionUuid | string | 是 | Session UUID |
+| taskUuid | string | 是 | Task UUID |
+
+**输出**: 更新后的 Checkin 记录 JSON
+
+### chorus_session_heartbeat
+
+**功能**: Session 心跳，更新 lastActiveAt。1 小时无心跳的 active session 会被自动标记为 inactive。
+
+**输入**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| sessionUuid | string | 是 | Session UUID |
+
+**输出**: 确认消息（含更新后的 lastActiveAt）
 
 ---
 
@@ -559,6 +676,9 @@ Developer Agent 和 Admin Agent 可使用。PM Agent 不可使用。
 |------|------|------|------|
 | taskUuid | string | 是 | Task UUID |
 | status | enum | 是 | 新状态: in_progress, to_verify |
+| sessionUuid | string | 否 | 关联的 Session UUID（用于标记哪个 worker 执行的操作） |
+
+**行为**: 当提供 `sessionUuid` 时，Activity 记录会包含 session 归属信息，且自动执行 session 心跳。
 
 **输出**: 更新后的 Task JSON
 
@@ -584,6 +704,9 @@ Developer Agent 和 Admin Agent 可使用。PM Agent 不可使用。
 | taskUuid | string | 是 | Task UUID |
 | report | string | 是 | 工作报告内容 |
 | status | enum | 否 | 可选：同时更新状态: in_progress, to_verify |
+| sessionUuid | string | 否 | 关联的 Session UUID（用于标记哪个 worker 执行的操作） |
+
+**行为**: 当提供 `sessionUuid` 时，Activity 记录会包含 session 归属信息，且自动执行 session 心跳。
 
 **输出**: 确认消息
 

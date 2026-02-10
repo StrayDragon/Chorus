@@ -1,14 +1,35 @@
 # Common Tools (All Roles)
 
-所有角色的 Agent 都可使用以下工具，用于查询信息和协作。
+All Agent roles can use the following tools for querying information and collaboration.
 
 ---
 
-## Session
+## Checkin
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_checkin` | Session 开始时调用：获取 Agent 人格、角色、当前分配和待处理数量 |
+| `chorus_checkin` | Call at session start: get Agent persona, role, current assignments, and pending work counts |
+
+---
+
+## Session (Sub-Agent / Swarm Mode)
+
+Used to manage Agent work sessions, supporting sub-agent observability. See [05-session-sub-agent.md](05-session-sub-agent.md) for the full guide.
+
+| Tool | Purpose |
+|------|---------|
+| `chorus_create_session` | Create a new session (e.g., representing a sub-agent worker) |
+| `chorus_list_sessions` | List all sessions for the current Agent (filterable by status: active, inactive, closed) |
+| `chorus_get_session` | Get session details and active task checkins |
+| `chorus_close_session` | Close a session, automatically checks out all active task checkins |
+| `chorus_reopen_session` | Reopen a closed session (closed → active) for reuse |
+| `chorus_session_checkin_task` | Session checkin to a Task, indicating work has started |
+| `chorus_session_checkout_task` | Session checkout from a Task, indicating work has ended |
+| `chorus_session_heartbeat` | Heartbeat, updates lastActiveAt (auto-marked inactive after 1 hour with no heartbeat) |
+
+**Session-enhanced existing tools:**
+- `chorus_update_task` — Optional `sessionUuid` parameter; Activity record includes session attribution
+- `chorus_report_work` — Optional `sessionUuid` parameter; Activity record includes session attribution, auto-heartbeat
 
 ---
 
@@ -16,8 +37,8 @@
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_get_project` | 获取项目详情和背景信息 |
-| `chorus_get_activity` | 获取项目活动流（分页） |
+| `chorus_get_project` | Get project details and background information |
+| `chorus_get_activity` | Get project activity stream (paginated) |
 
 ---
 
@@ -25,9 +46,9 @@
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_get_ideas` | 列出项目 Ideas（可按 status 筛选，支持分页） |
-| `chorus_get_idea` | 获取单个 Idea 详情 |
-| `chorus_get_available_ideas` | 获取可认领的 Ideas（status=open） |
+| `chorus_get_ideas` | List project Ideas (filterable by status, paginated) |
+| `chorus_get_idea` | Get a single Idea's details |
+| `chorus_get_available_ideas` | Get claimable Ideas (status=open) |
 
 ---
 
@@ -35,8 +56,8 @@
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_get_documents` | 列出项目文档（可按 type 筛选：prd, tech_design, adr, spec, guide） |
-| `chorus_get_document` | 获取单个文档内容 |
+| `chorus_get_documents` | List project documents (filterable by type: prd, tech_design, adr, spec, guide) |
+| `chorus_get_document` | Get a single document's content |
 
 ---
 
@@ -44,8 +65,8 @@
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_get_proposals` | 列出项目 Proposals（可按 status 筛选：pending, approved, rejected） |
-| `chorus_get_proposal` | 获取单个 Proposal 详情，包含 documentDrafts 和 taskDrafts |
+| `chorus_get_proposals` | List project Proposals (filterable by status: pending, approved, rejected) |
+| `chorus_get_proposal` | Get a single Proposal's details, including documentDrafts and taskDrafts |
 
 ---
 
@@ -53,9 +74,9 @@
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_list_tasks` | 列出项目 Tasks（可按 status/priority 筛选，支持分页） |
-| `chorus_get_task` | 获取单个 Task 详情和上下文 |
-| `chorus_get_available_tasks` | 获取可认领的 Tasks（status=open） |
+| `chorus_list_tasks` | List project Tasks (filterable by status/priority, paginated) |
+| `chorus_get_task` | Get a single Task's details and context |
+| `chorus_get_available_tasks` | Get claimable Tasks (status=open) |
 
 ---
 
@@ -63,7 +84,7 @@
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_get_my_assignments` | 获取自己认领的所有 Ideas 和 Tasks |
+| `chorus_get_my_assignments` | Get all Ideas and Tasks claimed by you |
 
 ---
 
@@ -71,19 +92,19 @@
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_add_comment` | 对 idea/proposal/task/document 添加评论 |
-| `chorus_get_comments` | 获取目标的评论列表（分页） |
+| `chorus_add_comment` | Add a comment to an idea/proposal/task/document |
+| `chorus_get_comments` | Get the comment list for a target (paginated) |
 
 **Parameters for `chorus_add_comment`:**
 - `targetType`: `"idea"` / `"proposal"` / `"task"` / `"document"`
-- `targetUuid`: 目标 UUID
-- `content`: 评论内容（Markdown）
+- `targetUuid`: Target UUID
+- `content`: Comment content (Markdown)
 
 ---
 
 ## Usage Tips
 
-- 每个 session 开始时先调用 `chorus_checkin()` 了解自己的角色和待办事项
-- 在开始工作前先用 `chorus_get_project` + `chorus_get_documents` 了解项目背景
-- 用 `chorus_get_activity` 查看最近发生了什么，避免重复工作
-- 善用 `chorus_add_comment` 记录决策理由、提问和讨论
+- Call `chorus_checkin()` at the start of each session to understand your role and pending items
+- Use `chorus_get_project` + `chorus_get_documents` to understand project background before starting work
+- Use `chorus_get_activity` to see what happened recently and avoid duplicate work
+- Use `chorus_add_comment` to record decision rationale, ask questions, and hold discussions
