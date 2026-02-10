@@ -56,8 +56,15 @@ export async function POST(request: NextRequest) {
     if (sessionId && sessions.has(sessionId)) {
       // 复用现有会话
       transport = sessions.get(sessionId)!;
+    } else if (sessionId && !sessions.has(sessionId)) {
+      // 客户端带了过期/无效的 session ID（服务端重启后 session 丢失）
+      // 返回 404 让客户端知道需要重新 initialize
+      return NextResponse.json(
+        { jsonrpc: "2.0", error: { code: -32001, message: "Session not found. Please reinitialize." }, id: null },
+        { status: 404 }
+      );
     } else {
-      // 创建新会话
+      // 无 session ID — 新连接，创建新会话
       const newSessionId = generateSessionId();
       transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: () => newSessionId,
