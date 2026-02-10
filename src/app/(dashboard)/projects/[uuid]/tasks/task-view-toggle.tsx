@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { LayoutGrid, GitBranch } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { LayoutGrid, GitBranch, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KanbanBoard } from "./kanban-board";
 import { DagView } from "./dag-view";
@@ -31,8 +32,10 @@ interface TaskViewToggleProps {
 }
 
 export function TaskViewToggle({ projectUuid, initialTasks, currentUserUuid }: TaskViewToggleProps) {
+  const t = useTranslations();
   const [view, setView] = useState<"kanban" | "dag">("kanban");
   const [selectedTaskUuid, setSelectedTaskUuid] = useState<string | null>(null);
+  const [showCreatePanel, setShowCreatePanel] = useState(false);
   const [dagRefreshKey, setDagRefreshKey] = useState(0);
 
   const selectedTask = useMemo(
@@ -46,33 +49,45 @@ export function TaskViewToggle({ projectUuid, initialTasks, currentUserUuid }: T
 
   return (
     <>
-      {/* View Toggle */}
-      <div className="mb-4 flex items-center gap-1 rounded-lg bg-[#F5F2EC] p-1 w-fit">
+      {/* Toolbar: View Toggle + New Task */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-1 rounded-lg bg-[#F5F2EC] p-1 w-fit">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 gap-1.5 rounded-md px-3 text-xs ${
+              view === "kanban"
+                ? "bg-white text-[#2C2C2C] shadow-sm"
+                : "text-[#6B6B6B] hover:text-[#2C2C2C]"
+            }`}
+            onClick={() => setView("kanban")}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Kanban
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 gap-1.5 rounded-md px-3 text-xs ${
+              view === "dag"
+                ? "bg-white text-[#2C2C2C] shadow-sm"
+                : "text-[#6B6B6B] hover:text-[#2C2C2C]"
+            }`}
+            onClick={() => setView("dag")}
+          >
+            <GitBranch className="h-3.5 w-3.5" />
+            DAG
+          </Button>
+        </div>
         <Button
-          variant="ghost"
-          size="sm"
-          className={`h-8 gap-1.5 rounded-md px-3 text-xs ${
-            view === "kanban"
-              ? "bg-white text-[#2C2C2C] shadow-sm"
-              : "text-[#6B6B6B] hover:text-[#2C2C2C]"
-          }`}
-          onClick={() => setView("kanban")}
+          className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
+          onClick={() => {
+            setSelectedTaskUuid(null);
+            setShowCreatePanel(true);
+          }}
         >
-          <LayoutGrid className="h-3.5 w-3.5" />
-          Kanban
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`h-8 gap-1.5 rounded-md px-3 text-xs ${
-            view === "dag"
-              ? "bg-white text-[#2C2C2C] shadow-sm"
-              : "text-[#6B6B6B] hover:text-[#2C2C2C]"
-          }`}
-          onClick={() => setView("dag")}
-        >
-          <GitBranch className="h-3.5 w-3.5" />
-          DAG
+          <Plus className="mr-2 h-4 w-4" />
+          {t("tasks.newTask")}
         </Button>
       </div>
 
@@ -100,6 +115,17 @@ export function TaskViewToggle({ projectUuid, initialTasks, currentUserUuid }: T
             />
           )}
         </div>
+      )}
+
+      {/* Create Task Panel */}
+      {showCreatePanel && !selectedTask && (
+        <TaskDetailPanel
+          task={null}
+          projectUuid={projectUuid}
+          currentUserUuid={currentUserUuid}
+          onClose={() => setShowCreatePanel(false)}
+          onCreated={() => setShowCreatePanel(false)}
+        />
       )}
     </>
   );

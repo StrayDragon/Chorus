@@ -9,10 +9,8 @@ import {
   Draggable,
   DropResult,
 } from "@hello-pangea/dnd";
-import { Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { moveTaskToColumnAction } from "./actions";
 import { TaskDetailPanel } from "./task-detail-panel";
 
@@ -72,7 +70,6 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [selectedTaskUuid, setSelectedTaskUuid] = useState<string | null>(null);
-  const [showCreatePanel, setShowCreatePanel] = useState(false);
 
   // Sync local state when server data changes (after router.refresh())
   useEffect(() => {
@@ -159,18 +156,6 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
 
   return (
     <>
-    <div className="mb-4 flex justify-end">
-      <Button
-        className="bg-[#C67A52] hover:bg-[#B56A42] text-white"
-        onClick={() => {
-          setSelectedTaskUuid(null);
-          setShowCreatePanel(true);
-        }}
-      >
-        <Plus className="mr-2 h-4 w-4" />
-        {t("tasks.newTask")}
-      </Button>
-    </div>
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
         {columnConfigs.map((column) => {
@@ -340,16 +325,6 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
       />
     )}
 
-    {/* Task Detail Panel - Create */}
-    {showCreatePanel && !selectedTask && (
-      <TaskDetailPanel
-        task={null}
-        projectUuid={projectUuid}
-        currentUserUuid={currentUserUuid}
-        onClose={() => setShowCreatePanel(false)}
-        onCreated={() => setShowCreatePanel(false)}
-      />
-    )}
     </>
   );
 }
