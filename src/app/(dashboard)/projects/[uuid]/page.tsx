@@ -83,7 +83,7 @@ export default async function ProjectOverviewPage({ params }: PageProps) {
                 {project.name}
               </h1>
               <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#E8F5E9] text-[#5A9E6F]">
-                active
+                {t("status.active")}
               </span>
             </div>
             {project.description && (

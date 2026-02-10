@@ -77,7 +77,8 @@ const statusI18nKeys: Record<string, string> = {
   closed: "closed",
 };
 
-function formatRelativeTime(dateString: string): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function formatRelativeTime(dateString: string, t: any): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -85,10 +86,10 @@ function formatRelativeTime(dateString: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins} min ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  if (diffMins < 1) return t("time.justNow");
+  if (diffMins < 60) return t("time.minutesAgo", { minutes: diffMins });
+  if (diffHours < 24) return t("time.hoursAgo", { hours: diffHours });
+  if (diffDays < 7) return t("time.daysAgo", { days: diffDays });
   return date.toLocaleDateString();
 }
 
@@ -429,7 +430,7 @@ export function IdeaDetailPanel({
                             <p className="text-xs text-[#2C2C2C]">
                               {formatActivityMessage(activity, t)}
                             </p>
-                            <p className="text-[10px] text-[#9A9A9A]">{formatRelativeTime(activity.createdAt)}</p>
+                            <p className="text-[10px] text-[#9A9A9A]">{formatRelativeTime(activity.createdAt, t)}</p>
                           </div>
                         </div>
                       ))
@@ -464,7 +465,7 @@ export function IdeaDetailPanel({
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-medium text-[#2C2C2C]">{c.author.name}</span>
-                              <span className="text-[10px] text-[#9A9A9A]">{formatRelativeTime(c.createdAt)}</span>
+                              <span className="text-[10px] text-[#9A9A9A]">{formatRelativeTime(c.createdAt, t)}</span>
                             </div>
                             <p className="mt-1 text-xs leading-relaxed text-[#2C2C2C]">
                               {c.content}

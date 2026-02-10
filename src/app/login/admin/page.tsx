@@ -42,13 +42,13 @@ function AdminLoginForm() {
       const data = await response.json();
 
       if (!data.success) {
-        setError(data.error?.message || "Invalid credentials");
+        setError(data.error?.message || t("admin.invalidCredentials"));
         return;
       }
 
       router.push(data.data.redirectTo || "/admin");
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("login.networkError"));
     } finally {
       setLoading(false);
     }

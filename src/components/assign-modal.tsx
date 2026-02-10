@@ -78,10 +78,10 @@ export function AssignModal({
           onOpenChange(false);
           router.refresh();
         } else {
-          setError(result.error || "Failed to assign");
+          setError(result.error || t("common.failedToAssign"));
         }
       } catch {
-        setError("An error occurred. Please try again.");
+        setError(t("common.genericError"));
       }
     });
   };

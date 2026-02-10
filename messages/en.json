@@ -45,7 +45,12 @@
     "activity": "Activity",
     "noActivity": "No activity yet",
     "source": "Source",
-    "currentAssignee": "Currently assigned to"
+    "currentAssignee": "Currently assigned to",
+    "failedToAssign": "Failed to assign",
+    "genericError": "An error occurred. Please try again.",
+    "unknown": "Unknown",
+    "system": "System",
+    "confirmDelete": "Are you sure you want to delete?"
   },
   "activity": {
     "taskCreated": "{actor} created this task",
@@ -60,7 +65,23 @@
     "ideaAssigned": "{actor} was assigned to this idea",
     "ideaClaimed": "{actor} claimed this idea",
     "ideaReleased": "{actor} released this idea",
-    "ideaStatusChanged": "{actor} changed the idea status"
+    "ideaStatusChanged": "{actor} changed the idea status",
+    "entityIdea": "Idea",
+    "entityProposal": "Proposal",
+    "entityTask": "Task",
+    "entityDocument": "Document",
+    "entityProject": "Project",
+    "actionCreated": "created",
+    "actionUpdated": "updated",
+    "actionApproved": "approved",
+    "actionRejected": "rejected",
+    "actionClaimed": "claimed",
+    "actionCompleted": "completed",
+    "title": "Activity",
+    "subtitle": "Recent activity across your project",
+    "noActivity": "No activity yet",
+    "noActivityDesc": "Activity will appear here as you and your agents work on this project.",
+    "loadingActivity": "Loading activity..."
   },
   "comments": {
     "title": "Comments",
@@ -104,6 +125,7 @@
     "lowPriority": "Low Priority",
     "mediumPriority": "Medium Priority",
     "highPriority": "High Priority",
+    "critical": "Critical",
     "criticalPriority": "Critical Priority"
   },
   "status": {
@@ -192,7 +214,9 @@
     "emailDomainHelp": "Users with this email domain will be routed to this company",
     "required": "Required",
     "companyNamePlaceholder": "e.g., Acme Corporation",
-    "emailDomainPlaceholder": "e.g., acme.com"
+    "emailDomainPlaceholder": "e.g., acme.com",
+    "invalidCredentials": "Invalid credentials",
+    "createCompanyFailed": "Failed to create company"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -220,6 +244,7 @@
     "tasks": "tasks",
     "docs": "docs",
     "loadingProjects": "Loading projects...",
+    "createFailed": "Failed to create project",
     "createNew": {
       "title": "Create New Project",
       "subtitle": "Set up your project and let PM Agent start analyzing",
@@ -277,7 +302,8 @@
     "titleRequired": "Title is required",
     "updateFailed": "Failed to update idea",
     "deleteIdea": "Delete Idea",
-    "deleteIdeaConfirm": "Are you sure you want to delete \"{title}\"? This action cannot be undone."
+    "deleteIdeaConfirm": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+    "createFailed": "Failed to create idea"
   },
   "tasks": {
     "title": "Tasks",
@@ -317,7 +343,17 @@
     "acceptanceCriteriaLabel": "Acceptance Criteria",
     "saveChanges": "Save Changes",
     "createFailed": "Failed to create task",
-    "updateFailed": "Failed to update task"
+    "updateFailed": "Failed to update task",
+    "dependencies": "Dependencies",
+    "dependsOn": "Depends on",
+    "blockedByThis": "Blocked by this",
+    "noDependencies": "No dependencies",
+    "addDependency": "Add Dependency",
+    "failedToAddDep": "Failed to add dependency",
+    "failedToRemoveDep": "Failed to remove dependency",
+    "noTasksToDisplay": "No tasks to display",
+    "kanbanView": "Kanban",
+    "dagView": "DAG"
   },
   "proposals": {
     "pageTitle": "Proposals",
@@ -387,7 +423,15 @@
     "closeProposal": "Close Proposal",
     "closeProposalDesc": "Closing this proposal is permanent. Please provide a reason.",
     "closeReasonPlaceholder": "Enter the reason for closing...",
-    "closedNotice": "This proposal has been permanently closed."
+    "closedNotice": "This proposal has been permanently closed.",
+    "failedToSaveDocDraft": "Failed to save document draft",
+    "failedToSaveTaskDraft": "Failed to save task draft",
+    "docTypePrd": "PRD",
+    "docTypeTechDesign": "Tech Design",
+    "docTypeAdr": "ADR",
+    "docTypeSpec": "Spec",
+    "docTypeGuide": "Guide",
+    "storyPointsPlaceholder": "e.g. 4"
   },
   "documents": {
     "title": "Documents",
@@ -419,13 +463,6 @@
     "typeDesign": "Design",
     "typeNote": "Note",
     "typeOther": "Other"
-  },
-  "activity": {
-    "title": "Activity",
-    "subtitle": "Recent activity across your project",
-    "noActivity": "No activity yet",
-    "noActivityDesc": "Activity will appear here as you and your agents work on this project.",
-    "loadingActivity": "Loading activity..."
   },
   "settings": {
     "title": "Settings",
@@ -485,6 +522,7 @@
     "loginSuccess": "Login successful! Redirecting...",
     "authFailed": "Authentication failed",
     "backToLogin": "Back to Login",
+    "noOrganizationFound": "No organization found for this email",
     "defaultAuth": {
       "title": "Sign In",
       "email": "Email",

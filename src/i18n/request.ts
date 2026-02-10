@@ -2,12 +2,17 @@
 // Server-side i18n configuration for next-intl
 
 import { getRequestConfig } from 'next-intl/server';
-import { defaultLocale, type Locale } from './config';
+import { cookies } from 'next/headers';
+import { locales, defaultLocale, type Locale } from './config';
 
 export default getRequestConfig(async () => {
-  // For client-side locale detection, we use defaultLocale on server
-  // The actual locale is managed client-side via LocaleProvider
-  const locale: Locale = defaultLocale;
+  // Read locale from cookie (set by client-side LocaleProvider)
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get('chorus-locale')?.value;
+  const locale: Locale =
+    cookieLocale && locales.includes(cookieLocale as Locale)
+      ? (cookieLocale as Locale)
+      : defaultLocale;
 
   return {
     locale,

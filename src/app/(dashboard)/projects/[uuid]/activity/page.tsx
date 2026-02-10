@@ -21,21 +21,21 @@ interface ActivityWithActor {
   isAgent: boolean;
 }
 
-const actionConfig: Record<string, { label: string; color: string }> = {
-  created: { label: "created", color: "text-[#5A9E6F]" },
-  updated: { label: "updated", color: "text-[#1976D2]" },
-  approved: { label: "approved", color: "text-[#5A9E6F]" },
-  rejected: { label: "rejected", color: "text-[#D32F2F]" },
-  claimed: { label: "claimed", color: "text-[#7B1FA2]" },
-  completed: { label: "completed", color: "text-[#00796B]" },
+const actionConfig: Record<string, { i18nKey: string; color: string }> = {
+  created: { i18nKey: "activity.actionCreated", color: "text-[#5A9E6F]" },
+  updated: { i18nKey: "activity.actionUpdated", color: "text-[#1976D2]" },
+  approved: { i18nKey: "activity.actionApproved", color: "text-[#5A9E6F]" },
+  rejected: { i18nKey: "activity.actionRejected", color: "text-[#D32F2F]" },
+  claimed: { i18nKey: "activity.actionClaimed", color: "text-[#7B1FA2]" },
+  completed: { i18nKey: "activity.actionCompleted", color: "text-[#00796B]" },
 };
 
-const entityTypeConfig: Record<string, { label: string; color: string }> = {
-  idea: { label: "Idea", color: "bg-[#FFF3E0] text-[#E65100]" },
-  proposal: { label: "Proposal", color: "bg-[#F3E5F5] text-[#7B1FA2]" },
-  task: { label: "Task", color: "bg-[#E3F2FD] text-[#1976D2]" },
-  document: { label: "Document", color: "bg-[#E8F5E9] text-[#5A9E6F]" },
-  project: { label: "Project", color: "bg-[#FFF3E0] text-[#E65100]" },
+const entityTypeConfig: Record<string, { i18nKey: string; color: string }> = {
+  idea: { i18nKey: "activity.entityIdea", color: "bg-[#FFF3E0] text-[#E65100]" },
+  proposal: { i18nKey: "activity.entityProposal", color: "bg-[#F3E5F5] text-[#7B1FA2]" },
+  task: { i18nKey: "activity.entityTask", color: "bg-[#E3F2FD] text-[#1976D2]" },
+  document: { i18nKey: "activity.entityDocument", color: "bg-[#E8F5E9] text-[#5A9E6F]" },
+  project: { i18nKey: "activity.entityProject", color: "bg-[#FFF3E0] text-[#E65100]" },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,12 +122,12 @@ export default async function ActivityPage({ params }: PageProps) {
     }),
   ]);
 
-  const userMap = new Map(users.map((u) => [u.uuid, { name: u.name || "User", isAgent: false }]));
+  const userMap = new Map(users.map((u) => [u.uuid, { name: u.name || t("common.unknown"), isAgent: false }]));
   const agentMap = new Map(agents.map((a) => [a.uuid, { name: a.name, isAgent: true }]));
 
   // 格式化 Activities
   const activities: ActivityWithActor[] = rawActivities.map((activity) => {
-    const actor = userMap.get(activity.actorUuid) || agentMap.get(activity.actorUuid) || { name: "System", isAgent: false };
+    const actor = userMap.get(activity.actorUuid) || agentMap.get(activity.actorUuid) || { name: t("common.system"), isAgent: false };
 
     return {
       uuid: activity.uuid,
@@ -183,9 +183,9 @@ export default async function ActivityPage({ params }: PageProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-sm">
                           <span className="font-medium text-[#2C2C2C]">{activity.actorName}</span>
-                          <span className={actionConf.color}>{actionConf.label}</span>
+                          <span className={actionConf.color}>{t(actionConf.i18nKey)}</span>
                           <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${entityConf.color}`}>
-                            {entityConf.label}
+                            {t(entityConf.i18nKey)}
                           </span>
                         </div>
                         {activity.value && typeof activity.value === "object" && "title" in (activity.value as object) ? (

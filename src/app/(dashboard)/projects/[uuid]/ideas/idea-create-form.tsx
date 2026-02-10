@@ -28,7 +28,7 @@ export function IdeaCreateForm({ projectUuid }: IdeaCreateFormProps) {
     setError(null);
 
     if (!title.trim()) {
-      setError("Title is required");
+      setError(t("ideas.titleRequired"));
       return;
     }
 
@@ -45,10 +45,10 @@ export function IdeaCreateForm({ projectUuid }: IdeaCreateFormProps) {
           setContent("");
           router.refresh();
         } else {
-          setError(result.error || "Failed to create idea");
+          setError(result.error || t("ideas.createFailed"));
         }
       } catch {
-        setError("An error occurred. Please try again.");
+        setError(t("common.genericError"));
       }
     });
   };

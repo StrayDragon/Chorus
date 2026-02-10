@@ -47,13 +47,17 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
 
   // Initialize locale from localStorage or browser detection
   useEffect(() => {
+    let resolved: Locale;
     const storedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
     if (storedLocale && locales.includes(storedLocale as Locale)) {
-      setLocaleState(storedLocale as Locale);
+      resolved = storedLocale as Locale;
     } else {
-      const browserLocale = detectBrowserLocale();
-      setLocaleState(browserLocale);
+      resolved = detectBrowserLocale();
+      localStorage.setItem(LOCALE_STORAGE_KEY, resolved);
     }
+    setLocaleState(resolved);
+    // Sync to cookie so Server Components can read the locale
+    document.cookie = `chorus-locale=${resolved};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
     setIsInitialized(true);
   }, []);
 
@@ -77,6 +81,8 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+    // Sync to cookie so Server Components can read the locale
+    document.cookie = `chorus-locale=${newLocale};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
     // Update html lang attribute
     document.documentElement.lang = newLocale;
   }, []);

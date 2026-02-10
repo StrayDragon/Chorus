@@ -86,7 +86,7 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!data.success) {
-        setError(data.error?.message || "An error occurred");
+        setError(data.error?.message || t("common.genericError"));
         return;
       }
 
@@ -111,7 +111,7 @@ export default function LoginPage() {
           },
         });
       } else {
-        setError(result.message || "No organization found for this email");
+        setError(result.message || t("login.noOrganizationFound"));
       }
     } catch (err) {
       console.error("Login error:", err);

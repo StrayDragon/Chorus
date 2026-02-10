@@ -124,7 +124,8 @@ const priorityI18nKeys: Record<string, string> = {
 };
 
 // 格式化相对时间
-function formatRelativeTime(dateString: string): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function formatRelativeTime(dateString: string, t: any): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -132,10 +133,10 @@ function formatRelativeTime(dateString: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins} min ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  if (diffMins < 1) return t("time.justNow");
+  if (diffMins < 60) return t("time.minutesAgo", { minutes: diffMins });
+  if (diffHours < 24) return t("time.hoursAgo", { hours: diffHours });
+  if (diffDays < 7) return t("time.daysAgo", { days: diffDays });
   return date.toLocaleDateString();
 }
 
@@ -456,7 +457,7 @@ export function TaskDetailPanel({
       }
       onDependencyChange?.();
     } else {
-      setDepError(result.error || "Failed to add dependency");
+      setDepError(result.error || t("tasks.failedToAddDep"));
     }
   };
 
@@ -468,7 +469,7 @@ export function TaskDetailPanel({
       setDependsOn(prev => prev.filter(d => d.uuid !== dependsOnUuid));
       onDependencyChange?.();
     } else {
-      setDepError(result.error || "Failed to remove dependency");
+      setDepError(result.error || t("tasks.failedToRemoveDep"));
     }
   };
 
@@ -481,7 +482,7 @@ export function TaskDetailPanel({
       setDependedBy(prev => prev.filter(d => d.uuid !== taskUuid));
       onDependencyChange?.();
     } else {
-      setDepError(result.error || "Failed to remove dependency");
+      setDepError(result.error || t("tasks.failedToRemoveDep"));
     }
   };
 
@@ -578,7 +579,7 @@ export function TaskDetailPanel({
       {isCreateMode && (
         <div className="space-y-2">
           <Label className="text-[13px] font-medium text-[#2C2C2C]">
-            Dependencies
+            {t("tasks.dependencies")}
           </Label>
 
           {/* Selected pending deps */}
@@ -593,7 +594,7 @@ export function TaskDetailPanel({
                     <GitBranch className="h-3.5 w-3.5 shrink-0 text-[#C67A52]" />
                     <span className="text-xs text-[#2C2C2C] truncate">{dep.title}</span>
                     <Badge className={`shrink-0 text-[10px] ${statusColors[dep.status] || ""}`}>
-                      {dep.status.replace("_", " ")}
+                      {t(`status.${statusI18nKeys[dep.status] || dep.status}`)}
                     </Badge>
                   </div>
                   <Button
@@ -624,7 +625,7 @@ export function TaskDetailPanel({
               <SelectTrigger className="h-8 border-[#E5E0D8] text-xs text-[#6B6B6B] focus:ring-[#C67A52]">
                 <div className="flex items-center gap-1.5">
                   <Plus className="h-3 w-3" />
-                  <SelectValue placeholder="Add Dependency" />
+                  <SelectValue placeholder={t("tasks.addDependency")} />
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -762,7 +763,7 @@ export function TaskDetailPanel({
                               {worker.sessionName}
                             </div>
                             <div className="text-[10px] text-[#9A9A9A]">
-                              {worker.agentName} · {formatRelativeTime(worker.checkinAt)}
+                              {worker.agentName} · {formatRelativeTime(worker.checkinAt, t)}
                             </div>
                           </div>
                         </div>
@@ -822,7 +823,7 @@ export function TaskDetailPanel({
                 {/* Dependencies Section */}
                 <div className="mt-5">
                   <label className="text-[11px] font-medium uppercase tracking-wide text-[#9A9A9A]">
-                    Dependencies
+                    {t("tasks.dependencies")}
                   </label>
 
                   {depError && (
@@ -843,7 +844,7 @@ export function TaskDetailPanel({
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <ArrowRight className="h-3 w-3 text-[#9A9A9A]" />
                             <span className="text-[10px] font-medium uppercase tracking-wide text-[#9A9A9A]">
-                              Depends on
+                              {t("tasks.dependsOn")}
                             </span>
                           </div>
                           <div className="space-y-1.5">
@@ -858,7 +859,7 @@ export function TaskDetailPanel({
                                     {dep.title}
                                   </span>
                                   <Badge className={`shrink-0 text-[10px] ${statusColors[dep.status] || ""}`}>
-                                    {dep.status.replace("_", " ")}
+                                    {t(`status.${statusI18nKeys[dep.status] || dep.status}`)}
                                   </Badge>
                                 </div>
                                 <Button
@@ -881,7 +882,7 @@ export function TaskDetailPanel({
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <ArrowRight className="h-3 w-3 rotate-180 text-[#9A9A9A]" />
                             <span className="text-[10px] font-medium uppercase tracking-wide text-[#9A9A9A]">
-                              Blocked by this
+                              {t("tasks.blockedByThis")}
                             </span>
                           </div>
                           <div className="space-y-1.5">
@@ -896,7 +897,7 @@ export function TaskDetailPanel({
                                     {dep.title}
                                   </span>
                                   <Badge className={`shrink-0 text-[10px] ${statusColors[dep.status] || ""}`}>
-                                    {dep.status.replace("_", " ")}
+                                    {t(`status.${statusI18nKeys[dep.status] || dep.status}`)}
                                   </Badge>
                                 </div>
                                 <Button
@@ -914,7 +915,7 @@ export function TaskDetailPanel({
                       )}
 
                       {dependsOn.length === 0 && dependedBy.length === 0 && (
-                        <p className="mt-2 text-sm italic text-[#9A9A9A]">No dependencies</p>
+                        <p className="mt-2 text-sm italic text-[#9A9A9A]">{t("tasks.noDependencies")}</p>
                       )}
 
                       {/* Add Dependency */}
@@ -927,7 +928,7 @@ export function TaskDetailPanel({
                             <SelectTrigger className="h-8 border-[#E5E0D8] text-xs text-[#6B6B6B] focus:ring-[#C67A52]">
                               <div className="flex items-center gap-1.5">
                                 <Plus className="h-3 w-3" />
-                                <SelectValue placeholder="Add Dependency" />
+                                <SelectValue placeholder={t("tasks.addDependency")} />
                               </div>
                             </SelectTrigger>
                             <SelectContent>
@@ -966,7 +967,7 @@ export function TaskDetailPanel({
                             <p className="text-xs text-[#2C2C2C]">
                               {formatActivityMessage(activity, t)}
                             </p>
-                            <p className="text-[10px] text-[#9A9A9A]">{formatRelativeTime(activity.createdAt)}</p>
+                            <p className="text-[10px] text-[#9A9A9A]">{formatRelativeTime(activity.createdAt, t)}</p>
                           </div>
                         </div>
                       ))
@@ -1001,7 +1002,7 @@ export function TaskDetailPanel({
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-medium text-[#2C2C2C]">{c.author.name}</span>
-                              <span className="text-[10px] text-[#9A9A9A]">{formatRelativeTime(c.createdAt)}</span>
+                              <span className="text-[10px] text-[#9A9A9A]">{formatRelativeTime(c.createdAt, t)}</span>
                             </div>
                             <p className="mt-1 text-xs leading-relaxed text-[#2C2C2C]">
                               {c.content}

@@ -144,10 +144,10 @@ export default function NewProjectPage() {
         localStorage.setItem("currentProjectUuid", result.projectUuid);
         router.push(`/projects/${result.projectUuid}`);
       } else {
-        setError(result.error || "Failed to create project");
+        setError(result.error || t("projects.createFailed"));
       }
     } catch {
-      setError("An error occurred. Please try again.");
+      setError(t("common.genericError"));
     } finally {
       setLoading(false);
     }

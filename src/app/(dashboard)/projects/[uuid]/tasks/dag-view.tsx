@@ -16,6 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { getProjectDependenciesAction } from "./actions";
@@ -40,11 +41,20 @@ const statusBorderColors: Record<string, string> = {
   closed: "#9A9A9A",
 };
 
-const priorityLabels: Record<string, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-  critical: "Critical",
+const priorityI18nKeys: Record<string, string> = {
+  low: "priority.low",
+  medium: "priority.medium",
+  high: "priority.high",
+  critical: "priority.critical",
+};
+
+const statusI18nKeys: Record<string, string> = {
+  open: "status.open",
+  assigned: "status.assigned",
+  in_progress: "status.inProgress",
+  to_verify: "status.toVerify",
+  done: "status.done",
+  closed: "status.closed",
 };
 
 const priorityDotColors: Record<string, string> = {
@@ -62,6 +72,7 @@ interface TaskNodeData {
 }
 
 function TaskNode({ data }: NodeProps<Node<TaskNodeData>>) {
+  const t = useTranslations();
   const borderColor = statusBorderColors[data.status] || "#E5E0D8";
 
   return (
@@ -72,11 +83,11 @@ function TaskNode({ data }: NodeProps<Node<TaskNodeData>>) {
       <Handle type="target" position={Position.Top} className="!bg-[#C67A52] !w-2 !h-2" />
       <div className="flex items-center gap-2 mb-1.5">
         <Badge className={`text-[10px] ${statusColors[data.status] || ""}`}>
-          {data.status.replace("_", " ")}
+          {t(statusI18nKeys[data.status] || data.status)}
         </Badge>
         <div className="flex items-center gap-1">
           <div className={`h-1.5 w-1.5 rounded-full ${priorityDotColors[data.priority] || ""}`} />
-          <span className="text-[10px] text-[#9A9A9A]">{priorityLabels[data.priority] || data.priority}</span>
+          <span className="text-[10px] text-[#9A9A9A]">{t(priorityI18nKeys[data.priority] || data.priority)}</span>
         </div>
       </div>
       <p className="text-xs font-medium text-[#2C2C2C] leading-snug line-clamp-2">
@@ -137,6 +148,7 @@ const defaultEdgeStyle = {
 };
 
 export function DagView({ projectUuid, onTaskSelect, refreshKey }: DagViewProps) {
+  const t = useTranslations();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<TaskNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -183,7 +195,7 @@ export function DagView({ projectUuid, onTaskSelect, refreshKey }: DagViewProps)
 
       const result = await addTaskDependencyAction(taskUuid, dependsOnUuid);
       if (!result.success) {
-        setError(result.error || "Failed to add dependency");
+        setError(result.error || t("tasks.failedToAddDep"));
         return;
       }
 
@@ -211,7 +223,7 @@ export function DagView({ projectUuid, onTaskSelect, refreshKey }: DagViewProps)
   if (nodes.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-[#9A9A9A]">
-        No tasks to display
+        {t("tasks.noTasksToDisplay")}
       </div>
     );
   }

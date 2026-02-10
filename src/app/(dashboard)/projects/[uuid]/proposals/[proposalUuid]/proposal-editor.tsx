@@ -132,13 +132,13 @@ export function ProposalEditor({
         setShowDocDialog(false);
         router.refresh();
       } else {
-        setError(result.error || "Failed to save document draft");
+        setError(result.error || t("proposals.failedToSaveDocDraft"));
       }
     });
   };
 
   const handleDeleteDoc = (doc: DocumentDraft) => {
-    if (!confirm(t("common.delete") + "?")) return;
+    if (!confirm(t("common.confirmDelete"))) return;
 
     startTransition(async () => {
       const result = await removeDocumentDraftAction(proposalUuid, doc.uuid);
@@ -196,13 +196,13 @@ export function ProposalEditor({
         setShowTaskDialog(false);
         router.refresh();
       } else {
-        setError(result.error || "Failed to save task draft");
+        setError(result.error || t("proposals.failedToSaveTaskDraft"));
       }
     });
   };
 
   const handleDeleteTask = (task: TaskDraft) => {
-    if (!confirm(t("common.delete") + "?")) return;
+    if (!confirm(t("common.confirmDelete"))) return;
 
     startTransition(async () => {
       const result = await removeTaskDraftAction(proposalUuid, task.uuid);
@@ -242,7 +242,7 @@ export function ProposalEditor({
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
-                      {doc.type.toUpperCase()}
+                      {t(`proposals.docType${doc.type === "prd" ? "Prd" : doc.type === "tech_design" ? "TechDesign" : doc.type === "adr" ? "Adr" : doc.type === "spec" ? "Spec" : "Guide"}`)}
                     </Badge>
                     <span className="font-medium text-[#2C2C2C]">{doc.title}</span>
                   </div>
@@ -308,7 +308,7 @@ export function ProposalEditor({
                   <div className="flex items-center gap-2">
                     {task.priority && (
                       <Badge variant="outline" className="text-xs">
-                        {task.priority}
+                        {t(`priority.${task.priority}`)}
                       </Badge>
                     )}
                     {task.storyPoints && (
@@ -374,11 +374,11 @@ export function ProposalEditor({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="prd">PRD</SelectItem>
-                  <SelectItem value="tech_design">Tech Design</SelectItem>
-                  <SelectItem value="adr">ADR</SelectItem>
-                  <SelectItem value="spec">Spec</SelectItem>
-                  <SelectItem value="guide">Guide</SelectItem>
+                  <SelectItem value="prd">{t("proposals.docTypePrd")}</SelectItem>
+                  <SelectItem value="tech_design">{t("proposals.docTypeTechDesign")}</SelectItem>
+                  <SelectItem value="adr">{t("proposals.docTypeAdr")}</SelectItem>
+                  <SelectItem value="spec">{t("proposals.docTypeSpec")}</SelectItem>
+                  <SelectItem value="guide">{t("proposals.docTypeGuide")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -485,7 +485,7 @@ export function ProposalEditor({
                   step="0.5"
                   value={taskStoryPoints}
                   onChange={(e) => setTaskStoryPoints(e.target.value)}
-                  placeholder="e.g. 4"
+                  placeholder={t("proposals.storyPointsPlaceholder")}
                   className="border-[#E5E0D8]"
                 />
               </div>

@@ -8,12 +8,12 @@ import { updateTaskStatusAction } from "./actions";
 
 const statusOrder = ["open", "assigned", "in_progress", "to_verify", "done"];
 
-const statusConfig: Record<string, { label: string }> = {
-  open: { label: "Open" },
-  assigned: { label: "Assigned" },
-  in_progress: { label: "In Progress" },
-  to_verify: { label: "To Verify" },
-  done: { label: "Done" },
+const statusI18nKeys: Record<string, string> = {
+  open: "status.open",
+  assigned: "status.assigned",
+  in_progress: "status.inProgress",
+  to_verify: "status.toVerify",
+  done: "status.done",
 };
 
 interface TaskStatusProgressProps {
@@ -44,7 +44,6 @@ export function TaskStatusProgress({ taskUuid, currentStatus }: TaskStatusProgre
         {statusOrder.map((status, index) => {
           const isActive = index === currentIndex;
           const isComplete = index < currentIndex;
-          const config = statusConfig[status];
 
           return (
             <div key={status} className="flex flex-1 items-center">
@@ -82,7 +81,7 @@ export function TaskStatusProgress({ taskUuid, currentStatus }: TaskStatusProgre
                   )}
                 </div>
                 <span className="mt-2 text-xs font-medium text-[#6B6B6B]">
-                  {config?.label}
+                  {t(statusI18nKeys[status] || status)}
                 </span>
               </button>
               {index < statusOrder.length - 1 && (

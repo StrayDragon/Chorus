@@ -63,7 +63,7 @@ export function TaskViewToggle({ projectUuid, initialTasks, currentUserUuid }: T
             onClick={() => setView("kanban")}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
-            Kanban
+            {t("tasks.kanbanView")}
           </Button>
           <Button
             variant="ghost"
@@ -76,7 +76,7 @@ export function TaskViewToggle({ projectUuid, initialTasks, currentUserUuid }: T
             onClick={() => setView("dag")}
           >
             <GitBranch className="h-3.5 w-3.5" />
-            DAG
+            {t("tasks.dagView")}
           </Button>
         </div>
         <Button

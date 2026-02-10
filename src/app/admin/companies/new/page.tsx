@@ -43,7 +43,7 @@ export default function NewCompanyPage() {
       const data = await response.json();
 
       if (!data.success) {
-        setError(data.error?.message || "Failed to create company");
+        setError(data.error?.message || t("admin.createCompanyFailed"));
         return;
       }
 

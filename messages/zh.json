@@ -45,7 +45,12 @@
     "activity": "动态",
     "noActivity": "暂无动态",
     "source": "来源",
-    "currentAssignee": "当前负责人"
+    "currentAssignee": "当前负责人",
+    "failedToAssign": "分配失败",
+    "genericError": "发生错误，请重试。",
+    "unknown": "未知",
+    "system": "系统",
+    "confirmDelete": "确定要删除吗？"
   },
   "activity": {
     "taskCreated": "{actor} 创建了此任务",
@@ -60,7 +65,23 @@
     "ideaAssigned": "{actor} 被分配到此想法",
     "ideaClaimed": "{actor} 认领了此想法",
     "ideaReleased": "{actor} 释放了此想法",
-    "ideaStatusChanged": "{actor} 更改了想法状态"
+    "ideaStatusChanged": "{actor} 更改了想法状态",
+    "entityIdea": "想法",
+    "entityProposal": "提案",
+    "entityTask": "任务",
+    "entityDocument": "文档",
+    "entityProject": "项目",
+    "actionCreated": "创建了",
+    "actionUpdated": "更新了",
+    "actionApproved": "批准了",
+    "actionRejected": "拒绝了",
+    "actionClaimed": "认领了",
+    "actionCompleted": "完成了",
+    "title": "动态",
+    "subtitle": "项目最近活动",
+    "noActivity": "暂无动态",
+    "noActivityDesc": "当您和智能体在此项目上工作时，动态将在此显示。",
+    "loadingActivity": "加载动态中..."
   },
   "comments": {
     "title": "评论",
@@ -104,6 +125,7 @@
     "lowPriority": "低优先级",
     "mediumPriority": "中优先级",
     "highPriority": "高优先级",
+    "critical": "紧急",
     "criticalPriority": "紧急优先级"
   },
   "status": {
@@ -192,7 +214,9 @@
     "emailDomainHelp": "使用此邮箱域名的用户将被路由到此公司",
     "required": "必填",
     "companyNamePlaceholder": "例如：Acme 公司",
-    "emailDomainPlaceholder": "例如：acme.com"
+    "emailDomainPlaceholder": "例如：acme.com",
+    "invalidCredentials": "凭证无效",
+    "createCompanyFailed": "创建公司失败"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -220,6 +244,7 @@
     "tasks": "个任务",
     "docs": "个文档",
     "loadingProjects": "加载项目中...",
+    "createFailed": "创建项目失败",
     "createNew": {
       "title": "创建新项目",
       "subtitle": "设置您的项目，让 PM 智能体开始分析",
@@ -278,7 +303,8 @@
     "titleRequired": "标题不能为空",
     "updateFailed": "更新想法失败",
     "deleteIdea": "删除想法",
-    "deleteIdeaConfirm": "确定要删除「{title}」吗？此操作无法撤销。"
+    "deleteIdeaConfirm": "确定要删除「{title}」吗？此操作无法撤销。",
+    "createFailed": "创建想法失败"
   },
   "tasks": {
     "title": "任务",
@@ -318,7 +344,17 @@
     "acceptanceCriteriaLabel": "验收标准",
     "saveChanges": "保存更改",
     "createFailed": "创建任务失败",
-    "updateFailed": "更新任务失败"
+    "updateFailed": "更新任务失败",
+    "dependencies": "依赖关系",
+    "dependsOn": "依赖于",
+    "blockedByThis": "被此任务阻塞",
+    "noDependencies": "无依赖",
+    "addDependency": "添加依赖",
+    "failedToAddDep": "添加依赖失败",
+    "failedToRemoveDep": "移除依赖失败",
+    "noTasksToDisplay": "暂无任务",
+    "kanbanView": "看板",
+    "dagView": "DAG"
   },
   "proposals": {
     "pageTitle": "提案",
@@ -388,7 +424,15 @@
     "closeProposal": "关闭提案",
     "closeProposalDesc": "关闭提案后将无法再编辑。请填写关闭原因。",
     "closeReasonPlaceholder": "请输入关闭原因...",
-    "closedNotice": "此提案已被永久关闭。"
+    "closedNotice": "此提案已被永久关闭。",
+    "failedToSaveDocDraft": "保存文档草稿失败",
+    "failedToSaveTaskDraft": "保存任务草稿失败",
+    "docTypePrd": "PRD",
+    "docTypeTechDesign": "技术设计",
+    "docTypeAdr": "ADR",
+    "docTypeSpec": "规格说明",
+    "docTypeGuide": "指南",
+    "storyPointsPlaceholder": "例如 4"
   },
   "documents": {
     "title": "文档",
@@ -420,13 +464,6 @@
     "typeDesign": "设计文档",
     "typeNote": "笔记",
     "typeOther": "其他"
-  },
-  "activity": {
-    "title": "动态",
-    "subtitle": "项目最近活动",
-    "noActivity": "暂无动态",
-    "noActivityDesc": "当您和智能体在此项目上工作时，动态将在此显示。",
-    "loadingActivity": "加载动态中..."
   },
   "settings": {
     "title": "设置",
@@ -486,6 +523,7 @@
     "loginSuccess": "登录成功！正在跳转...",
     "authFailed": "认证失败",
     "backToLogin": "返回登录",
+    "noOrganizationFound": "未找到该邮箱对应的组织",
     "defaultAuth": {
       "title": "登录",
       "email": "邮箱",
