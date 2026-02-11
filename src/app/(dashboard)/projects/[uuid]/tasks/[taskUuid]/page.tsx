@@ -12,6 +12,7 @@ import { getTask } from "@/services/task.service";
 import { projectExists } from "@/services/project.service";
 import { TaskActions } from "./task-actions";
 import { TaskStatusProgress } from "./task-status-progress";
+import { MarkdownContent } from "@/components/markdown-content";
 
 // 状态颜色配置
 const statusColors: Record<string, string> = {
@@ -129,8 +130,8 @@ export default async function TaskDetailPage({ params }: PageProps) {
           <Card className="border-[#E5E0D8] p-6">
             <h2 className="mb-4 text-lg font-medium text-[#2C2C2C]">{t("common.description")}</h2>
             {task.description ? (
-              <div className="prose prose-sm max-w-none text-[#6B6B6B]">
-                <p className="whitespace-pre-wrap">{task.description}</p>
+              <div className="prose prose-sm max-w-none text-[#2C2C2C]">
+                <MarkdownContent>{task.description}</MarkdownContent>
               </div>
             ) : (
               <p className="text-sm text-[#9A9A9A] italic">{t("common.noDescription")}</p>

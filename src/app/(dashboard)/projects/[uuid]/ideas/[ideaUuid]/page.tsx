@@ -12,6 +12,7 @@ import { getIdea } from "@/services/idea.service";
 import { projectExists } from "@/services/project.service";
 import { checkIdeasAvailability } from "@/services/proposal.service";
 import { IdeaActions } from "./idea-actions";
+import { MarkdownContent } from "@/components/markdown-content";
 
 // 状态颜色配置
 const statusColors: Record<string, string> = {
@@ -112,8 +113,8 @@ export default async function IdeaDetailPage({ params }: PageProps) {
           <Card className="border-[#E5E0D8] p-6">
             <h2 className="mb-4 text-lg font-medium text-[#2C2C2C]">{t("common.content")}</h2>
             {idea.content ? (
-              <div className="prose prose-sm max-w-none text-[#6B6B6B]">
-                <p className="whitespace-pre-wrap">{idea.content}</p>
+              <div className="prose prose-sm max-w-none text-[#2C2C2C]">
+                <MarkdownContent>{idea.content}</MarkdownContent>
               </div>
             ) : (
               <p className="text-sm text-[#9A9A9A] italic">{t("common.noContent")}</p>

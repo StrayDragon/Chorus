@@ -32,6 +32,7 @@ import { getIdeaActivitiesAction } from "./[ideaUuid]/activity-actions";
 import { updateIdeaAction, deleteIdeaAction } from "./actions";
 import type { ActivityResponse } from "@/services/activity.service";
 import type { CommentResponse } from "@/services/comment.service";
+import { Streamdown } from "streamdown";
 import { AssignIdeaModal } from "./assign-idea-modal";
 
 interface Idea {
@@ -399,9 +400,9 @@ export function IdeaDetailPanel({
                   </label>
                   <div className="mt-2">
                     {idea.content ? (
-                      <p className="text-[13px] leading-relaxed text-[#2C2C2C] whitespace-pre-wrap">
-                        {idea.content}
-                      </p>
+                      <div className="prose prose-sm max-w-none text-[13px] leading-relaxed text-[#2C2C2C]">
+                        <Streamdown>{idea.content}</Streamdown>
+                      </div>
                     ) : (
                       <p className="text-sm italic text-[#9A9A9A]">{t("common.noContent")}</p>
                     )}

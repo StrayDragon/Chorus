@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Streamdown } from "streamdown";
 import { IdeaDetailPanel } from "./idea-detail-panel";
 import { useRealtime } from "@/hooks/use-realtime";
 
@@ -158,9 +159,9 @@ export function IdeasList({
 
                 {/* Content */}
                 {idea.content && (
-                  <p className="text-[13px] leading-relaxed text-[#2C2C2C] line-clamp-3">
-                    {idea.content}
-                  </p>
+                  <div className="prose prose-sm max-w-none line-clamp-3 text-[13px] leading-relaxed text-[#2C2C2C]">
+                    <Streamdown>{idea.content}</Streamdown>
+                  </div>
                 )}
               </CardContent>
 

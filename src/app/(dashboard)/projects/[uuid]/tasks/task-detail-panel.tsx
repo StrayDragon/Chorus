@@ -42,6 +42,7 @@ import {
   type ProposalSource,
 } from "./[taskUuid]/source-actions";
 import type { CommentResponse } from "@/services/comment.service";
+import { Streamdown } from "streamdown";
 import { AssignTaskModal } from "./assign-task-modal";
 import {
   getTaskDependenciesAction,
@@ -779,9 +780,9 @@ export function TaskDetailPanel({
                   </label>
                   <div className="mt-2">
                     {task.description ? (
-                      <p className="text-[13px] leading-relaxed text-[#2C2C2C] whitespace-pre-wrap">
-                        {task.description}
-                      </p>
+                      <div className="prose prose-sm max-w-none text-[13px] leading-relaxed text-[#2C2C2C]">
+                        <Streamdown>{task.description}</Streamdown>
+                      </div>
                     ) : (
                       <p className="text-sm italic text-[#9A9A9A]">{t("common.noDescription")}</p>
                     )}
@@ -795,9 +796,9 @@ export function TaskDetailPanel({
                       {t("tasks.acceptanceCriteria")}
                     </label>
                     <div className="mt-2">
-                      <p className="text-[13px] leading-relaxed text-[#2C2C2C] whitespace-pre-wrap">
-                        {task.acceptanceCriteria}
-                      </p>
+                      <div className="prose prose-sm max-w-none text-[13px] leading-relaxed text-[#2C2C2C]">
+                        <Streamdown>{task.acceptanceCriteria}</Streamdown>
+                      </div>
                     </div>
                   </div>
                 )}

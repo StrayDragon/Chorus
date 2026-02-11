@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bot, User } from "lucide-react";
+import { Streamdown } from "streamdown";
 import type { DocumentDraft, TaskDraft } from "@/services/proposal.service";
 import { useRealtime } from "@/hooks/use-realtime";
 
@@ -141,9 +142,9 @@ export function ProposalKanban({ projectUuid, proposals }: ProposalKanbanProps) 
 
                         {/* Description */}
                         {proposal.description && (
-                          <p className="mb-2 line-clamp-2 text-sm text-[#6B6B6B]">
-                            {proposal.description}
-                          </p>
+                          <div className="prose prose-sm max-w-none mb-2 line-clamp-2 text-sm text-[#6B6B6B]">
+                            <Streamdown>{proposal.description}</Streamdown>
+                          </div>
                         )}
 
                         {/* Bottom row: Creator */}
