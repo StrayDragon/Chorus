@@ -18,4 +18,10 @@ class ChorusEventBus extends EventEmitter {
   }
 }
 
-export const eventBus = new ChorusEventBus();
+// Use globalThis to ensure a true process-level singleton across
+// Next.js Route Handlers and Server Actions (which use separate module graphs)
+const globalForEventBus = globalThis as unknown as {
+  chorusEventBus: ChorusEventBus | undefined;
+};
+
+export const eventBus = (globalForEventBus.chorusEventBus ??= new ChorusEventBus());
