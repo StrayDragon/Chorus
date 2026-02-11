@@ -224,7 +224,7 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`flex-1 space-y-3 overflow-y-auto min-h-[100px] rounded-lg transition-colors ${
+                    className={`flex-1 space-y-3 overflow-y-auto min-h-[100px] rounded-lg pt-3 pr-3 transition-colors ${
                       snapshot.isDraggingOver ? "bg-[#E5E0D8]" : ""
                     }`}
                   >
@@ -250,6 +250,12 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
                                 }
                               }}
                             >
+                              <div className="relative">
+                                {workerCounts[task.uuid] > 0 && (
+                                  <div className="absolute -top-3 -right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-green-400 bg-white shadow-sm">
+                                    <img src="/typing-animation.gif" alt="" className="h-8 w-8" />
+                                  </div>
+                                )}
                               <Card
                                 className={`cursor-pointer border-[#E5E0D8] bg-white p-4 transition-all hover:border-[#C67A52] hover:shadow-sm ${
                                   snapshot.isDragging
@@ -265,7 +271,8 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
                                   >
                                     {t(`status.${statusI18nKeys[task.status] || task.status}`)}
                                   </Badge>
-                                  {task.storyPoints && (
+                                  <div className="flex items-center gap-1.5">
+                                    {task.storyPoints && (
                                     <span className="flex items-center gap-1 rounded bg-[#FFF3E0] px-2 py-0.5 text-xs font-medium text-[#E65100]">
                                       <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -282,7 +289,8 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
                                       </svg>
                                       {task.storyPoints}h
                                     </span>
-                                  )}
+                                    )}
+                                  </div>
                                 </div>
                                 <h4 className="mb-1 font-medium text-[#2C2C2C]">
                                   {task.title}
@@ -331,6 +339,7 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
                                   )}
                                 </div>
                               </Card>
+                              </div>
                             </div>
                           )}
                         </Draggable>
