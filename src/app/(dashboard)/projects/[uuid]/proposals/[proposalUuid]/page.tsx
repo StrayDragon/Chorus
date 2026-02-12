@@ -14,10 +14,12 @@ import {
   Lightbulb,
   Pencil,
   AlertCircle,
-  Calendar,
+  Bot,
+  User,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Streamdown } from "streamdown";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getProposal, type DocumentDraft, type TaskDraft } from "@/services/proposal.service";
@@ -31,9 +33,16 @@ const statusColors: Record<string, string> = {
   draft: "bg-[#F5F5F5] text-[#6B6B6B]",
   pending: "bg-[#FFF3E0] text-[#E65100]",
   approved: "bg-[#E8F5E9] text-[#5A9E6F]",
-  rejected: "bg-[#FFEBEE] text-[#D32F2F]",
+  rejected: "bg-[#FFEBEE] text-[#C4574C]",
   revised: "bg-[#E3F2FD] text-[#1976D2]",
   closed: "bg-[#F5F5F5] text-[#9A9A9A]",
+};
+
+// Review note background per status
+const reviewNoteColors: Record<string, string> = {
+  approved: "bg-[#E8F5E9] text-[#5A9E6F]",
+  rejected: "bg-[#FFEBEE] text-[#C4574C]",
+  closed: "bg-[#F5F5F5] text-[#6B6B6B]",
 };
 
 // 状态到翻译 key 的映射
@@ -76,7 +85,7 @@ export default async function ProposalDetailPage({ params }: PageProps) {
   if (!proposal) {
     return (
       <div className="flex h-full flex-col items-center justify-center">
-        <div className="text-[#6B6B6B]">{t("proposals.proposalNotFound")}</div>
+        <div className="text-muted-foreground">{t("proposals.proposalNotFound")}</div>
         <Link href={`/projects/${projectUuid}/proposals`} className="mt-4 text-[#C67A52] hover:underline">
           {t("proposals.backToProposals")}
         </Link>
@@ -88,37 +97,37 @@ export default async function ProposalDetailPage({ params }: PageProps) {
   const taskDrafts = proposal.taskDrafts as TaskDraft[] | null;
 
   return (
-    <div className="p-8">
+    <div className="px-10 py-8">
       {/* Breadcrumb */}
-      <div className="mb-6 flex items-center gap-2 text-sm">
-        <Link href={`/projects/${projectUuid}/proposals`} className="text-[#6B6B6B] hover:text-[#2C2C2C]">
+      <div className="mb-7 flex items-center gap-2 text-xs">
+        <Link href={`/projects/${projectUuid}/proposals`} className="text-muted-foreground hover:text-foreground transition-colors">
           {t("nav.proposals")}
         </Link>
-        <ChevronRight className="h-4 w-4 text-[#9A9A9A]" />
-        <span className="text-[#2C2C2C]">{proposal.title}</span>
+        <ChevronRight className="h-3.5 w-3.5 text-[#D0CCC4]" />
+        <span className="font-medium text-[#6B6B6B]">{proposal.title}</span>
       </div>
 
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-8 flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F2EC]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5F2EC]">
             <ClipboardList className="h-6 w-6 text-[#C67A52]" />
           </div>
           <div>
-            <div className="mb-1 flex items-center gap-3">
-              <Badge className={statusColors[proposal.status] || ""}>
+            <div className="mb-2 flex items-center gap-2.5">
+              <Badge className={`text-[11px] font-semibold border-0 ${statusColors[proposal.status] || ""}`}>
                 {t(`status.${statusI18nKeys[proposal.status] || proposal.status}`)}
               </Badge>
-              <span className="text-sm text-[#6B6B6B]">
+              <span className="text-xs text-muted-foreground">
                 {t("proposals.basedOn")} {t(inputTypeI18nKeys[proposal.inputType]?.key || "common.unknown")}
               </span>
             </div>
-            <h1 className="text-2xl font-semibold text-[#2C2C2C]">{proposal.title}</h1>
-            <div className="mt-2 flex items-center gap-3 text-sm text-[#6B6B6B]">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{proposal.title}</h1>
+            <div className="mt-2 flex items-center gap-2.5 text-xs text-muted-foreground">
               <span>{t("common.created")} {new Date(proposal.createdAt).toLocaleDateString()}</span>
               {proposal.createdBy && (
                 <>
-                  <span>·</span>
+                  <span className="text-[#D0CCC4]">·</span>
                   <span className="flex items-center gap-1">
                     <Monitor className="h-3 w-3" />
                     {proposal.createdBy.name}
@@ -135,17 +144,23 @@ export default async function ProposalDetailPage({ params }: PageProps) {
         />
       </div>
 
-      {/* Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/* Content — two column layout */}
+      <div className="flex gap-7">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="min-w-0 flex-1 space-y-6">
           {/* Description */}
           {proposal.description && (
-            <Card className="border-[#E5E0D8] p-6">
-              <h2 className="mb-4 text-lg font-medium text-[#2C2C2C]">{t("common.description")}</h2>
-              <div className="prose prose-sm max-w-none text-[#6B6B6B]">
-                <Streamdown>{proposal.description}</Streamdown>
-              </div>
+            <Card className="border-[#E5E2DC] shadow-none rounded-2xl gap-0 py-0">
+              <CardHeader className="border-b border-[#F5F2EC] px-5 py-4">
+                <CardTitle className="text-[13px] font-semibold text-foreground">
+                  {t("common.description")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 py-4">
+                <div className="prose prose-sm max-w-none text-[#6B6B6B]">
+                  <Streamdown>{proposal.description}</Streamdown>
+                </div>
+              </CardContent>
             </Card>
           )}
 
@@ -160,135 +175,159 @@ export default async function ProposalDetailPage({ params }: PageProps) {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Details */}
-          <Card className="border-[#E5E0D8] p-4">
-            <h3 className="mb-3 text-sm font-medium text-[#6B6B6B]">{t("common.details")}</h3>
-            <dl className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <dt className="text-[#9A9A9A]">{t("common.status")}</dt>
-                <dd className="font-medium text-[#2C2C2C]">
+        <div className="w-80 shrink-0 space-y-5">
+          {/* Details Card */}
+          <Card className="border-[#E5E2DC] shadow-none rounded-2xl gap-0 py-0 overflow-hidden">
+            <CardHeader className="border-b border-[#F5F2EC] px-5 py-4">
+              <CardTitle className="text-[13px] font-semibold text-foreground">
+                {t("common.details")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 px-5 py-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{t("common.status")}</span>
+                <Badge className={`text-[11px] font-medium border-0 ${statusColors[proposal.status] || ""}`}>
                   {t(`status.${statusI18nKeys[proposal.status] || proposal.status}`)}
-                </dd>
+                </Badge>
               </div>
-              <div className="flex justify-between text-sm">
-                <dt className="text-[#9A9A9A]">{t("proposals.inputType")}</dt>
-                <dd className="font-medium text-[#2C2C2C]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{t("proposals.inputType")}</span>
+                <span className="text-xs font-medium text-foreground">
                   {t(inputTypeI18nKeys[proposal.inputType]?.key || "common.unknown")}
-                </dd>
+                </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <dt className="text-[#9A9A9A]">{t("proposals.creatorType")}</dt>
-                <dd className="font-medium text-[#2C2C2C]">
-                  {proposal.createdByType === "agent" ? t("common.agent") : t("common.user")}
-                </dd>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{t("proposals.creatorType")}</span>
+                <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                  {proposal.createdByType === "agent" ? (
+                    <><Bot className="h-3 w-3 text-[#C67A52]" />{t("common.agent")}</>
+                  ) : (
+                    <><User className="h-3 w-3 text-muted-foreground" />{t("common.user")}</>
+                  )}
+                </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <dt className="text-[#9A9A9A]">{t("common.created")}</dt>
-                <dd className="font-medium text-[#2C2C2C]">
+              <Separator className="bg-[#F5F2EC]" />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{t("common.created")}</span>
+                <span className="text-xs font-medium text-[#6B6B6B]">
                   {new Date(proposal.createdAt).toLocaleDateString()}
-                </dd>
+                </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <dt className="text-[#9A9A9A]">{t("common.updated")}</dt>
-                <dd className="font-medium text-[#2C2C2C]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{t("common.updated")}</span>
+                <span className="text-xs font-medium text-[#6B6B6B]">
                   {new Date(proposal.updatedAt).toLocaleDateString()}
-                </dd>
+                </span>
               </div>
-            </dl>
+            </CardContent>
           </Card>
 
-          {/* Container Summary */}
-          <Card className="border-[#E5E0D8] p-4">
-            <h3 className="mb-3 text-sm font-medium text-[#6B6B6B]">{t("proposals.containerSummary")}</h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-[#9A9A9A]">
-                  <FileText className="h-4 w-4" /> {t("proposals.documents")}
+          {/* Container Summary Card */}
+          <Card className="border-[#E5E2DC] shadow-none rounded-2xl gap-0 py-0 overflow-hidden">
+            <CardHeader className="border-b border-[#F5F2EC] px-5 py-4">
+              <CardTitle className="text-[13px] font-semibold text-foreground">
+                {t("proposals.containerSummary")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 px-5 py-4">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5" /> {t("proposals.documents")}
                 </span>
-                <span className="font-medium text-[#2C2C2C]">{documentDrafts?.length || 0}</span>
+                <span className="text-[13px] font-semibold text-[#6B6B6B]">{documentDrafts?.length || 0}</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-[#9A9A9A]">
-                  <ListTodo className="h-4 w-4" /> {t("proposals.tasks")}
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <ListTodo className="h-3.5 w-3.5" /> {t("proposals.tasks")}
                 </span>
-                <span className="font-medium text-[#2C2C2C]">{taskDrafts?.length || 0}</span>
+                <span className="text-[13px] font-semibold text-[#C67A52]">{taskDrafts?.length || 0}</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-[#9A9A9A]">
-                  <Lightbulb className="h-4 w-4" /> {t("proposals.inputs")}
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Lightbulb className="h-3.5 w-3.5" /> {t("proposals.inputs")}
                 </span>
-                <span className="font-medium text-[#2C2C2C]">{proposal.inputUuids?.length || 0}</span>
+                <span className="text-[13px] font-semibold text-[#6B6B6B]">{proposal.inputUuids?.length || 0}</span>
               </div>
-            </div>
+            </CardContent>
           </Card>
 
           {/* Review Info */}
           {proposal.review && (
-            <Card className="border-[#E5E0D8] p-4">
-              <h3 className="mb-3 text-sm font-medium text-[#6B6B6B]">{t("proposals.reviewInfo")}</h3>
-              <dl className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <dt className="text-[#9A9A9A]">{t("proposals.reviewedBy")}</dt>
-                  <dd className="font-medium text-[#2C2C2C]">
+            <Card className="border-[#E5E2DC] shadow-none rounded-2xl gap-0 py-0 overflow-hidden">
+              <CardHeader className="border-b border-[#F5F2EC] px-5 py-4">
+                <CardTitle className="text-[13px] font-semibold text-foreground">
+                  {t("proposals.reviewInfo")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{t("proposals.reviewedBy")}</span>
+                  <span className="text-xs font-medium text-[#6B6B6B]">
                     {proposal.review.reviewedBy?.name || "-"}
-                  </dd>
+                  </span>
                 </div>
                 {proposal.review.reviewedAt && (
-                  <div className="flex justify-between text-sm">
-                    <dt className="text-[#9A9A9A]">{t("proposals.reviewedAt")}</dt>
-                    <dd className="font-medium text-[#2C2C2C]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{t("proposals.reviewedAt")}</span>
+                    <span className="text-xs font-medium text-[#6B6B6B]">
                       {new Date(proposal.review.reviewedAt).toLocaleDateString()}
-                    </dd>
+                    </span>
                   </div>
                 )}
                 {proposal.review.reviewNote && (
-                  <div className="mt-2">
-                    <dt className="text-xs text-[#9A9A9A] mb-1">{t("proposals.reviewNote")}</dt>
-                    <dd className="text-sm text-[#6B6B6B] bg-[#F5F2EC] p-2 rounded">
-                      {proposal.review.reviewNote}
-                    </dd>
-                  </div>
+                  <>
+                    <Separator className="bg-[#F5F2EC]" />
+                    <div>
+                      <span className="text-[11px] text-muted-foreground">{t("proposals.reviewNote")}</span>
+                      <div className={`mt-1.5 rounded-lg px-3 py-2 text-xs font-medium ${reviewNoteColors[proposal.status] || "bg-[#F5F2EC] text-[#6B6B6B]"}`}>
+                        {proposal.review.reviewNote}
+                      </div>
+                    </div>
+                  </>
                 )}
-              </dl>
+              </CardContent>
             </Card>
           )}
 
-          {/* Rejection / Review Note (shown on draft after reject, or on closed) */}
+          {/* Rejection / Review Note (shown on draft after reject) */}
           {proposal.status === "draft" && proposal.review?.reviewNote && (
-            <Card className="border-[#D32F2F] bg-[#FFEBEE] p-4">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#D32F2F]" />
-                <div>
-                  <h3 className="text-sm font-medium text-[#D32F2F]">{t("proposals.rejectionReason")}</h3>
-                  <p className="mt-1 text-sm text-[#6B6B6B]">{proposal.review.reviewNote}</p>
-                  {proposal.review.reviewedBy && (
-                    <p className="mt-2 text-xs text-[#9A9A9A]">
-                      — {proposal.review.reviewedBy.name}
-                      {proposal.review.reviewedAt && `, ${new Date(proposal.review.reviewedAt).toLocaleDateString()}`}
-                    </p>
-                  )}
+            <Card className="border-[#C4574C] bg-[#FFEBEE] shadow-none rounded-2xl gap-0 py-0">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#C4574C]" />
+                  <div>
+                    <h3 className="text-xs font-semibold text-[#C4574C]">{t("proposals.rejectionReason")}</h3>
+                    <p className="mt-1 text-xs text-[#6B6B6B]">{proposal.review.reviewNote}</p>
+                    {proposal.review.reviewedBy && (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        — {proposal.review.reviewedBy.name}
+                        {proposal.review.reviewedAt && `, ${new Date(proposal.review.reviewedAt).toLocaleDateString()}`}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </CardContent>
             </Card>
           )}
 
           {/* Closed Reason */}
           {proposal.status === "closed" && proposal.review?.reviewNote && (
-            <Card className="border-[#9A9A9A] bg-[#F5F5F5] p-4">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#9A9A9A]" />
-                <div>
-                  <h3 className="text-sm font-medium text-[#6B6B6B]">{t("proposals.rejectionReason")}</h3>
-                  <p className="mt-1 text-sm text-[#6B6B6B]">{proposal.review.reviewNote}</p>
-                  {proposal.review.reviewedBy && (
-                    <p className="mt-2 text-xs text-[#9A9A9A]">
-                      — {proposal.review.reviewedBy.name}
-                      {proposal.review.reviewedAt && `, ${new Date(proposal.review.reviewedAt).toLocaleDateString()}`}
-                    </p>
-                  )}
+            <Card className="border-[#D0CCC4] bg-[#F5F2EC] shadow-none rounded-2xl gap-0 py-0">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div>
+                    <h3 className="text-xs font-semibold text-[#6B6B6B]">{t("proposals.rejectionReason")}</h3>
+                    <p className="mt-1 text-xs text-[#6B6B6B]">{proposal.review.reviewNote}</p>
+                    {proposal.review.reviewedBy && (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        — {proposal.review.reviewedBy.name}
+                        {proposal.review.reviewedAt && `, ${new Date(proposal.review.reviewedAt).toLocaleDateString()}`}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </CardContent>
             </Card>
           )}
 
@@ -297,37 +336,43 @@ export default async function ProposalDetailPage({ params }: PageProps) {
 
           {/* Draft Notice */}
           {proposal.status === "draft" && (
-            <Card className="border-[#6B6B6B] bg-[#F5F5F5] p-4">
-              <div className="flex items-center gap-2 text-sm text-[#6B6B6B]">
-                <Pencil className="h-4 w-4" />
-                {t("proposals.draftStatus")}
-              </div>
-              <p className="mt-2 text-xs text-[#6B6B6B]">
-                {t("proposals.draftNotice")}
-              </p>
+            <Card className="border-[#D0CCC4] bg-[#F5F2EC] shadow-none rounded-2xl gap-0 py-0">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-xs text-[#6B6B6B]">
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span className="font-medium">{t("proposals.draftStatus")}</span>
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  {t("proposals.draftNotice")}
+                </p>
+              </CardContent>
             </Card>
           )}
 
           {/* Pending Review Notice */}
           {proposal.status === "pending" && (
-            <Card className="border-[#C67A52] bg-[#FFFBF8] p-4">
-              <div className="flex items-center gap-2 text-sm text-[#E65100]">
-                <AlertCircle className="h-4 w-4" />
-                {t("proposals.awaitingReview")}
-              </div>
-              <p className="mt-2 text-xs text-[#6B6B6B]">
-                {t("proposals.reviewInstructions")}
-              </p>
+            <Card className="border-[#C67A52] bg-[#FFFBF8] shadow-none rounded-2xl gap-0 py-0">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-xs text-[#E65100]">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <span className="font-medium">{t("proposals.awaitingReview")}</span>
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  {t("proposals.reviewInstructions")}
+                </p>
+              </CardContent>
             </Card>
           )}
 
           {/* Closed Notice */}
           {proposal.status === "closed" && (
-            <Card className="border-[#9A9A9A] bg-[#F5F5F5] p-4">
-              <div className="flex items-center gap-2 text-sm text-[#9A9A9A]">
-                <AlertCircle className="h-4 w-4" />
-                {t("proposals.closedNotice")}
-              </div>
+            <Card className="border-[#D0CCC4] bg-[#F5F2EC] shadow-none rounded-2xl gap-0 py-0">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <span className="font-medium">{t("proposals.closedNotice")}</span>
+                </div>
+              </CardContent>
             </Card>
           )}
         </div>
