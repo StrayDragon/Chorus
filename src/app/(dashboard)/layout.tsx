@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
-  Music,
   ArrowLeft,
   ChevronDown,
   Plus,
@@ -179,7 +178,7 @@ export default function DashboardLayout({
         <div className="flex flex-col gap-8 p-6">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <Music className="h-7 w-7 text-foreground" />
+            <img src="/chorus-icon.png" alt="Chorus" className="h-7 w-7" />
             <span className="text-base font-semibold text-foreground">
               {t("common.appName")}
             </span>

@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Music, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 interface DefaultAuthInfo {
   enabled: boolean;
@@ -137,15 +137,13 @@ export default function LoginPage() {
         <CardContent className="p-10">
           {/* Logo Section */}
           <div className="mb-8 flex flex-col items-center gap-2">
-            <Music className="h-12 w-12 text-foreground" />
+            <img src="/chorus-icon.png" alt="Chorus" className="h-12 w-12" />
             <h1 className="text-[28px] font-semibold text-foreground">
-              {showDefaultAuthForm ? t("login.defaultAuth.title") : t("login.title")}
+              {t("login.title")}
             </h1>
-            {!showDefaultAuthForm && (
-              <p className="text-sm text-muted-foreground">
-                {t("login.subtitle")}
-              </p>
-            )}
+            <p className="text-sm text-muted-foreground">
+              {t("login.subtitle")}
+            </p>
           </div>
 
           {showDefaultAuthForm ? (
