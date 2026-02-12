@@ -21,6 +21,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { getAccessToken, authFetch, logout as authLogout, clearUserManager } from "@/lib/auth-client";
+import { PixelCanvasWidget } from "@/components/pixel-canvas-widget";
 
 interface User {
   uuid: string;
@@ -338,6 +339,14 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">{children}</main>
+
+      {/* Floating Pixel Canvas Widget (project context only) */}
+      {isProjectContext && currentProject && (
+        <PixelCanvasWidget
+          projectUuid={currentProject.uuid}
+          projectName={currentProject.name}
+        />
+      )}
     </div>
   );
 }

@@ -354,3 +354,49 @@ export async function getSessionName(sessionUuid: string): Promise<string | null
   });
   return session?.name ?? null;
 }
+
+/**
+ * Get all active sessions that have active checkins to tasks in a given project.
+ * Returns up to 5 unique sessions (for PixelCanvas slots).
+ */
+export async function getActiveSessionsForProject(
+  companyUuid: string,
+  projectUuid: string
+): Promise<TaskSessionInfo[]> {
+  const checkins = await prisma.sessionTaskCheckin.findMany({
+    where: {
+      checkoutAt: null,
+      task: { projectUuid },
+      session: { companyUuid, status: { in: ["active", "inactive"] } },
+    },
+    include: {
+      session: {
+        select: {
+          uuid: true,
+          name: true,
+          agentUuid: true,
+          agent: { select: { name: true } },
+        },
+      },
+    },
+    orderBy: { checkinAt: "asc" },
+  });
+
+  // Deduplicate by session UUID, keep first checkin per session
+  const seen = new Set<string>();
+  const unique: TaskSessionInfo[] = [];
+  for (const c of checkins) {
+    if (seen.has(c.session.uuid)) continue;
+    seen.add(c.session.uuid);
+    unique.push({
+      sessionUuid: c.session.uuid,
+      sessionName: c.session.name,
+      agentUuid: c.session.agentUuid,
+      agentName: c.session.agent.name,
+      checkinAt: c.checkinAt.toISOString(),
+    });
+    if (unique.length >= 5) break;
+  }
+
+  return unique;
+}

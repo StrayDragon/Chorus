@@ -583,5 +583,8 @@
     "checkedInSince": "签入于 {time}",
     "lastActive": "最后活跃 {time}",
     "checkins": "{count} 个任务"
+  },
+  "pixelCanvas": {
+    "title": "工作区"
   }
 }

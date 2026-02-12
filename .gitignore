@@ -53,3 +53,9 @@ default_deploy.sh
 
 packages/chorus-cdk/lib/*.js
 packages/chorus-cdk/lib/*.d.ts
+
+#demo
+dev-story-demo/
+
+#claude
+.claude/
