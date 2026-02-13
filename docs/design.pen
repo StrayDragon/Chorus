@@ -27625,7 +27625,7 @@
       "name": "Chorus - Proposal Detail (v2)",
       "clip": true,
       "width": 1440,
-      "height": 960,
+      "height": 1200,
       "fill": "#FAF8F4",
       "children": [
         {
@@ -28116,9 +28116,80 @@
                               "id": "5cuRf",
                               "name": "inputType",
                               "fill": "#9A9A9A",
-                              "content": "Based on ideas",
+                              "content": "Based on",
                               "fontFamily": "IBM Plex Sans",
-                              "fontSize": 13
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ebn4K",
+                              "name": "Idea Link 1",
+                              "fill": "#C67A5215",
+                              "cornerRadius": 6,
+                              "gap": 4,
+                              "padding": [
+                                3,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "hHELb",
+                                  "name": "ideaIcon1",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "lightbulb",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#C67A52"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "GL5E1",
+                                  "name": "ideaLink1Text",
+                                  "fill": "#C67A52",
+                                  "content": "Add SSO login",
+                                  "fontFamily": "IBM Plex Sans",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mdyTw",
+                              "name": "Idea Link 2",
+                              "fill": "#C67A5215",
+                              "cornerRadius": 6,
+                              "gap": 4,
+                              "padding": [
+                                3,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "ENEBs",
+                                  "name": "ideaIcon2",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "lightbulb",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#C67A52"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Fd1XW",
+                                  "name": "ideaLink2Text",
+                                  "fill": "#C67A52",
+                                  "content": "JWT session mgmt",
+                                  "fontFamily": "IBM Plex Sans",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
                             }
                           ]
                         },
@@ -28147,7 +28218,8 @@
                               "fill": "#9A9A9A",
                               "content": "Created Feb 12, 2026",
                               "fontFamily": "IBM Plex Sans",
-                              "fontSize": 13
+                              "fontSize": 13,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -28352,7 +28424,8 @@
                               "content": "Implement a secure authentication system with JWT tokens, session management, and role-based access control. The module should support both email/password and SSO authentication methods.",
                               "lineHeight": 1.5,
                               "fontFamily": "IBM Plex Sans",
-                              "fontSize": 14
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
@@ -28395,7 +28468,8 @@
                                       "content": "JWT token-based authentication with refresh token rotation",
                                       "lineHeight": 1.4,
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 14
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
                                     }
                                   ]
                                 },
@@ -28426,7 +28500,8 @@
                                       "content": "Role-based access control (RBAC) with admin, user, and agent roles",
                                       "lineHeight": 1.4,
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 14
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
                                     }
                                   ]
                                 },
@@ -28457,7 +28532,8 @@
                                       "content": "SSO integration via OIDC for enterprise customers",
                                       "lineHeight": 1.4,
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 14
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
                                     }
                                   ]
                                 }
@@ -28716,7 +28792,7 @@
                                   "id": "aF6LI",
                                   "name": "Doc 1 Content Preview",
                                   "width": "fill_container",
-                                  "fill": "#FAF8F4",
+                                  "fill": "#F5F2EC",
                                   "cornerRadius": 8,
                                   "layout": "vertical",
                                   "gap": 6,
@@ -28735,7 +28811,8 @@
                                       "content": "This document outlines the requirements for implementing a comprehensive user authentication system. It covers JWT token management, session handling, RBAC policies, and SSO integration...",
                                       "lineHeight": 1.45,
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 13
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
                                     },
                                     {
                                       "type": "text",
@@ -29107,14 +29184,15 @@
                                   "content": "Implement Express middleware for JWT token verification and refresh token rotation logic.",
                                   "lineHeight": 1.4,
                                   "fontFamily": "IBM Plex Sans",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "frame",
                                   "id": "1GYdf",
                                   "name": "T1 AC",
                                   "width": "fill_container",
-                                  "fill": "#FAF8F4",
+                                  "fill": "#F5F2EC",
                                   "cornerRadius": 8,
                                   "layout": "vertical",
                                   "gap": 4,
@@ -29143,7 +29221,8 @@
                                       "content": "Tokens expire after 15 min; refresh tokens rotated on use; invalid tokens return 401.",
                                       "lineHeight": 1.4,
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 12
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
                                     }
                                   ]
                                 },
@@ -29250,7 +29329,8 @@
                                   "content": "Create role definitions, permission checks, and guard decorators for API routes.",
                                   "lineHeight": 1.4,
                                   "fontFamily": "IBM Plex Sans",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "frame",
@@ -29390,7 +29470,8 @@
                                   "content": "Connect to external identity providers for enterprise SSO login flow.",
                                   "lineHeight": 1.4,
                                   "fontFamily": "IBM Plex Sans",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "frame",
@@ -29575,7 +29656,8 @@
                                   "fill": "#9A9A9A",
                                   "content": "Status",
                                   "fontFamily": "IBM Plex Sans",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "frame",
@@ -29617,7 +29699,8 @@
                                   "fill": "#9A9A9A",
                                   "content": "Input type",
                                   "fontFamily": "IBM Plex Sans",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -29646,7 +29729,8 @@
                                   "fill": "#9A9A9A",
                                   "content": "Creator type",
                                   "fontFamily": "IBM Plex Sans",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "frame",
@@ -29694,7 +29778,8 @@
                                   "fill": "#9A9A9A",
                                   "content": "Created",
                                   "fontFamily": "IBM Plex Sans",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -29723,7 +29808,8 @@
                                   "fill": "#9A9A9A",
                                   "content": "Updated",
                                   "fontFamily": "IBM Plex Sans",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -29734,6 +29820,169 @@
                                   "fontFamily": "IBM Plex Sans",
                                   "fontSize": 13,
                                   "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "iRfZw",
+                      "name": "Source Ideas Card",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 16,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#E5E2DC"
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "5cL8L",
+                          "name": "srcIdeasHeader",
+                          "width": "fill_container",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "bottom": 1
+                            },
+                            "fill": "#F5F2EC"
+                          },
+                          "gap": 8,
+                          "padding": [
+                            14,
+                            20
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "YHFQF",
+                              "name": "srcHeaderIcon",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "lightbulb",
+                              "iconFontFamily": "lucide",
+                              "fill": "#C67A52"
+                            },
+                            {
+                              "type": "text",
+                              "id": "MdihP",
+                              "name": "srcIdeasTitle",
+                              "fill": "#2C2C2C",
+                              "content": "Source Ideas",
+                              "fontFamily": "IBM Plex Sans",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Z2Drx",
+                          "name": "srcIdeasBody",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": [
+                            12,
+                            20
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Iomfy",
+                              "name": "Source Idea 1",
+                              "width": "fill_container",
+                              "fill": "#F5F2EC",
+                              "cornerRadius": 8,
+                              "gap": 8,
+                              "padding": [
+                                6,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "VO55f",
+                                  "name": "srcIdea1Icon",
+                                  "width": 14,
+                                  "height": 14,
+                                  "iconFontName": "lightbulb",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#C67A52"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "HBpTa",
+                                  "name": "srcIdea1Label",
+                                  "fill": "#C67A52",
+                                  "content": "Add SSO login",
+                                  "fontFamily": "IBM Plex Sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "icon_font",
+                                  "id": "2Vhpw",
+                                  "name": "srcIdea1Arrow",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "arrow-up-right",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#9A9A9A"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "7zShO",
+                              "name": "Source Idea 2",
+                              "width": "fill_container",
+                              "fill": "#F5F2EC",
+                              "cornerRadius": 8,
+                              "gap": 8,
+                              "padding": [
+                                6,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "iQKXN",
+                                  "name": "srcIdea2Icon",
+                                  "width": 14,
+                                  "height": 14,
+                                  "iconFontName": "lightbulb",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#C67A52"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Dn9Es",
+                                  "name": "srcIdea2Label",
+                                  "fill": "#C67A52",
+                                  "content": "JWT session management",
+                                  "fontFamily": "IBM Plex Sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "icon_font",
+                                  "id": "Flkl1",
+                                  "name": "srcIdea2Arrow",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "arrow-up-right",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#9A9A9A"
                                 }
                               ]
                             }
@@ -29828,7 +30077,8 @@
                                       "fill": "#6B6B6B",
                                       "content": "Documents",
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 13
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
                                     }
                                   ]
                                 },
@@ -29876,7 +30126,8 @@
                                       "fill": "#6B6B6B",
                                       "content": "Tasks",
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 13
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
                                     }
                                   ]
                                 },
@@ -29924,7 +30175,8 @@
                                       "fill": "#6B6B6B",
                                       "content": "Inputs",
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 13
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
                                     }
                                   ]
                                 },
@@ -30061,7 +30313,8 @@
                                           "fill": "#9A9A9A",
                                           "content": "2 hours ago",
                                           "fontFamily": "IBM Plex Sans",
-                                          "fontSize": 12
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
                                         }
                                       ]
                                     },
@@ -30075,7 +30328,8 @@
                                       "content": "Added RBAC task with dependency on JWT middleware. SSO task depends on both.",
                                       "lineHeight": 1.4,
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 13
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
                                     }
                                   ]
                                 }
@@ -30145,7 +30399,8 @@
                                       "fill": "#9A9A9A",
                                       "content": "Add a comment...",
                                       "fontFamily": "IBM Plex Sans",
-                                      "fontSize": 13
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
                                     },
                                     {
                                       "type": "icon_font",
@@ -30221,7 +30476,8 @@
                               "content": "This proposal is in draft. Add content and submit for review when ready.",
                               "lineHeight": 1.4,
                               "fontFamily": "IBM Plex Sans",
-                              "fontSize": 13
+                              "fontSize": 13,
+                              "fontWeight": "normal"
                             }
                           ]
                         }

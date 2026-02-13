@@ -458,7 +458,7 @@ export function ProposalEditor({
                     </div>
                     {/* Document content (collapsible) */}
                     {isExpanded && doc.content && (
-                      <div className="ml-7 mt-3 rounded-lg bg-[#FAF8F4] p-4">
+                      <div className="ml-7 mt-3 rounded-lg bg-[#F5F2EC] p-4">
                         <div className="prose prose-sm max-w-none text-[#6B6B6B]">
                           <Streamdown>{doc.content}</Streamdown>
                         </div>
@@ -567,7 +567,7 @@ export function ProposalEditor({
 
                       {/* Acceptance criteria */}
                       {task.acceptanceCriteria && (
-                        <div className="mb-3 rounded-lg bg-[#FAF8F4] p-3">
+                        <div className="mb-3 rounded-lg bg-[#F5F2EC] p-3">
                           <div className="mb-1 text-[10px] font-medium text-muted-foreground">
                             {t("tasks.acceptanceCriteria")}
                           </div>

@@ -23,10 +23,12 @@ import { Separator } from "@/components/ui/separator";
 import { Streamdown } from "streamdown";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getProposal, type DocumentDraft, type TaskDraft } from "@/services/proposal.service";
+import { getIdea } from "@/services/idea.service";
 import { projectExists } from "@/services/project.service";
 import { ProposalActions } from "./proposal-actions";
 import { ProposalEditor } from "./proposal-editor";
 import { ProposalComments } from "./proposal-comments";
+import { SourceIdeasCard } from "./source-ideas-card";
 
 // 状态颜色配置
 const statusColors: Record<string, string> = {
@@ -96,6 +98,13 @@ export default async function ProposalDetailPage({ params }: PageProps) {
   const documentDrafts = proposal.documentDrafts as DocumentDraft[] | null;
   const taskDrafts = proposal.taskDrafts as TaskDraft[] | null;
 
+  // Fetch source ideas (when inputType is "idea" and inputUuids exist)
+  const sourceIdeas = proposal.inputType === "idea" && proposal.inputUuids?.length
+    ? (await Promise.all(
+        proposal.inputUuids.map((uuid: string) => getIdea(auth.companyUuid, uuid))
+      )).filter(Boolean) as Awaited<ReturnType<typeof getIdea>>[]
+    : [];
+
   return (
     <div className="px-10 py-8">
       {/* Breadcrumb */}
@@ -114,13 +123,30 @@ export default async function ProposalDetailPage({ params }: PageProps) {
             <ClipboardList className="h-6 w-6 text-[#C67A52]" />
           </div>
           <div>
-            <div className="mb-2 flex items-center gap-2.5">
+            <div className="mb-2 flex flex-wrap items-center gap-2.5">
               <Badge className={`text-[11px] font-semibold border-0 ${statusColors[proposal.status] || ""}`}>
                 {t(`status.${statusI18nKeys[proposal.status] || proposal.status}`)}
               </Badge>
-              <span className="text-xs text-muted-foreground">
-                {t("proposals.basedOn")} {t(inputTypeI18nKeys[proposal.inputType]?.key || "common.unknown")}
-              </span>
+              {sourceIdeas.length > 0 ? (
+                <>
+                  <span className="text-xs text-muted-foreground">
+                    {t("proposals.basedOn")}
+                  </span>
+                  {sourceIdeas.map((idea) => (
+                    <span
+                      key={idea!.uuid}
+                      className="inline-flex items-center gap-1 rounded-md bg-[#C67A5215] px-2 py-0.5 text-[11px] font-medium text-[#C67A52]"
+                    >
+                      <Lightbulb className="h-3 w-3" />
+                      {idea!.title}
+                    </span>
+                  ))}
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  {t("proposals.basedOn")} {t(inputTypeI18nKeys[proposal.inputType]?.key || "common.unknown")}
+                </span>
+              )}
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">{proposal.title}</h1>
             <div className="mt-2 flex items-center gap-2.5 text-xs text-muted-foreground">
@@ -221,6 +247,22 @@ export default async function ProposalDetailPage({ params }: PageProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Source Ideas Card */}
+          {sourceIdeas.length > 0 && (
+            <SourceIdeasCard
+              ideas={sourceIdeas.map((idea) => ({
+                uuid: idea!.uuid,
+                title: idea!.title,
+                content: idea!.content,
+                status: idea!.status,
+                assignee: idea!.assignee,
+                createdAt: idea!.createdAt,
+              }))}
+              projectUuid={projectUuid}
+              currentUserUuid={auth.actorUuid}
+            />
+          )}
 
           {/* Container Summary Card */}
           <Card className="border-[#E5E2DC] shadow-none rounded-2xl gap-0 py-0 overflow-hidden">

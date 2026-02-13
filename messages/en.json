@@ -366,6 +366,8 @@
     "proposalNotFound": "Proposal not found",
     "backToProposals": "Back to Proposals",
     "sourceIdea": "Source Idea",
+    "sourceIdeas": "Source Ideas",
+    "noSourceIdeas": "No source ideas",
     "awaitingReview": "Awaiting your review",
     "reviewInstructions": "Review the content and approve or reject this proposal.",
     "basedOn": "Based on",

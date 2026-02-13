@@ -367,6 +367,8 @@
     "proposalNotFound": "提案未找到",
     "backToProposals": "返回提案列表",
     "sourceIdea": "来源想法",
+    "sourceIdeas": "来源想法",
+    "noSourceIdeas": "无来源想法",
     "awaitingReview": "等待您的审核",
     "reviewInstructions": "审核内容并批准或拒绝此提案。",
     "basedOn": "基于",
