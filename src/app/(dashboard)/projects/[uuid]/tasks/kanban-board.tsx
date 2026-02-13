@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { moveTaskToColumnAction } from "./actions";
 import { TaskDetailPanel } from "./task-detail-panel";
 import { getTaskSessionsAction } from "./session-actions";
-import { useRealtime } from "@/hooks/use-realtime";
+import { useRealtimeRefresh } from "@/contexts/realtime-context";
 
 interface Task {
   uuid: string;
@@ -73,7 +73,7 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [selectedTaskUuid, setSelectedTaskUuid] = useState<string | null>(null);
   const [workerCounts, setWorkerCounts] = useState<Record<string, number>>({});
-  useRealtime(projectUuid);
+  useRealtimeRefresh();
 
   // Sync local state when server data changes (after router.refresh())
   useEffect(() => {
@@ -82,13 +82,10 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid }: Kanb
 
   // Fetch active worker counts for in-progress tasks
   useEffect(() => {
-    const inProgressTasks = initialTasks.filter(
-      (t) => t.status === "in_progress" || t.status === "assigned"
-    );
-    if (inProgressTasks.length === 0) return;
+    if (initialTasks.length === 0) return;
 
     Promise.all(
-      inProgressTasks.map(async (task) => {
+      initialTasks.map(async (task) => {
         const result = await getTaskSessionsAction(task.uuid);
         return { uuid: task.uuid, count: result.data?.length || 0 };
       })

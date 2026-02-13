@@ -610,5 +610,8 @@
     "checkedInSince": "Checked in {time}",
     "lastActive": "Last active {time}",
     "checkins": "{count} task(s)"
+  },
+  "pixelCanvas": {
+    "title": "Workspace"
   }
 }

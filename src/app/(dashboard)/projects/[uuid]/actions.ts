@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { getProject, deleteProject } from "@/services/project.service";
+import { getActiveSessionsForProject, type TaskSessionInfo } from "@/services/session.service";
 
 export async function deleteProjectAction(projectUuid: string) {
   const auth = await getServerAuthContext();
@@ -23,4 +24,23 @@ export async function deleteProjectAction(projectUuid: string) {
   }
 
   redirect("/projects");
+}
+
+export async function getProjectActiveSessionsAction(projectUuid: string): Promise<{
+  success: boolean;
+  data?: TaskSessionInfo[];
+  error?: string;
+}> {
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    const sessions = await getActiveSessionsForProject(auth.companyUuid, projectUuid);
+    return { success: true, data: sessions };
+  } catch (error) {
+    console.error("Failed to fetch active sessions:", error);
+    return { success: false, error: "Failed to fetch active sessions" };
+  }
 }

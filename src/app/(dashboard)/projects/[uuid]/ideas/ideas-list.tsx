@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Streamdown } from "streamdown";
 import { IdeaDetailPanel } from "./idea-detail-panel";
-import { useRealtime } from "@/hooks/use-realtime";
+import { useRealtimeRefresh } from "@/contexts/realtime-context";
 
 interface IdeaItem {
   uuid: string;
@@ -85,7 +85,7 @@ export function IdeasList({
   ideaProposalMap,
 }: IdeasListProps) {
   const t = useTranslations();
-  useRealtime(projectUuid);
+  useRealtimeRefresh();
   const [selectedIdeaUuid, setSelectedIdeaUuid] = useState<string | null>(null);
   const usedSet = new Set(usedIdeaUuids);
 
