@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { getAccessToken, authFetch, logout as authLogout, clearUserManager } from "@/lib/auth-client";
 import { PixelCanvasWidget } from "@/components/pixel-canvas-widget";
+import { RealtimeProvider } from "@/contexts/realtime-context";
 
 interface User {
   uuid: string;
@@ -338,14 +339,16 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">{children}</main>
-
-      {/* Floating Pixel Canvas Widget (project context only) */}
-      {isProjectContext && currentProject && (
-        <PixelCanvasWidget
-          projectUuid={currentProject.uuid}
-          projectName={currentProject.name}
-        />
+      {isProjectContext && currentProject ? (
+        <RealtimeProvider projectUuid={currentProject.uuid}>
+          <main className="flex-1 overflow-auto">{children}</main>
+          <PixelCanvasWidget
+            projectUuid={currentProject.uuid}
+            projectName={currentProject.name}
+          />
+        </RealtimeProvider>
+      ) : (
+        <main className="flex-1 overflow-auto">{children}</main>
       )}
     </div>
   );

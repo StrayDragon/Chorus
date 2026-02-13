@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
@@ -16,6 +16,7 @@ import {
   type PixelCanvasEffect,
 } from "@/components/pixel-canvas";
 import { getProjectActiveSessionsAction } from "@/app/(dashboard)/projects/[uuid]/actions";
+import { useRealtimeEvent } from "@/contexts/realtime-context";
 
 interface PixelCanvasWidgetProps {
   projectUuid: string;
@@ -49,31 +50,8 @@ export function PixelCanvasWidget({ projectUuid, projectName }: PixelCanvasWidge
     setAgentCount(sessions.length);
   }, [projectUuid]);
 
-  // Initial fetch + SSE-driven refresh
-  useEffect(() => {
-    fetchSessions();
-
-    const es = new EventSource(`/api/events?projectUuid=${projectUuid}`);
-    let debounceTimer: NodeJS.Timeout;
-
-    es.onmessage = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(fetchSessions, 500);
-    };
-
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        fetchSessions();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      es.close();
-      clearTimeout(debounceTimer);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [projectUuid, fetchSessions]);
+  // Initial fetch + SSE-driven refresh via context
+  useRealtimeEvent(fetchSessions);
 
   const handleEffectsConsumed = useCallback(() => {
     setEffects([]);

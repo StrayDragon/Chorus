@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bot, User } from "lucide-react";
 import { Streamdown } from "streamdown";
 import type { DocumentDraft, TaskDraft } from "@/services/proposal.service";
-import { useRealtime } from "@/hooks/use-realtime";
+import { useRealtimeRefresh } from "@/contexts/realtime-context";
 
 interface Proposal {
   uuid: string;
@@ -73,7 +73,7 @@ function getTypeTagKey(proposal: Proposal): string | null {
 
 export function ProposalKanban({ projectUuid, proposals }: ProposalKanbanProps) {
   const t = useTranslations();
-  useRealtime(projectUuid);
+  useRealtimeRefresh();
 
   const getProposalsForColumn = (statuses: string[]) =>
     proposals.filter((p) => statuses.includes(p.status));
