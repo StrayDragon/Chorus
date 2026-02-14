@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { formatAssigneeComplete, formatCreatedBy } from "@/lib/uuid-resolver";
 import { eventBus } from "@/lib/event-bus";
 import { AlreadyClaimedError, NotClaimedError, isPrismaNotFound } from "@/lib/errors";
+import { batchCommentCounts } from "@/services/comment.service";
 
 // ===== 类型定义 =====
 
@@ -75,6 +76,7 @@ export interface TaskResponse {
   createdBy: { type: string; uuid: string; name: string } | null;
   dependsOn: TaskDependencyInfo[];
   dependedBy: TaskDependencyInfo[];
+  commentCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -118,7 +120,8 @@ async function formatTaskResponse(
     project?: { uuid: string; name: string };
     dependsOn?: Array<{ dependsOn: { uuid: string; title: string; status: string } }>;
     dependedBy?: Array<{ task: { uuid: string; title: string; status: string } }>;
-  }
+  },
+  commentCount: number = 0,
 ): Promise<TaskResponse> {
   const [assignee, createdBy] = await Promise.all([
     formatAssigneeComplete(task.assigneeType, task.assigneeUuid, task.assignedAt, task.assignedByUuid),
@@ -151,6 +154,7 @@ async function formatTaskResponse(
     createdBy,
     dependsOn,
     dependedBy,
+    commentCount,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
   };
@@ -217,7 +221,16 @@ export async function listTasks({
     prisma.task.count({ where }),
   ]);
 
-  const tasks = await Promise.all(rawTasks.map(formatTaskResponse));
+  // Batch-fetch comment counts for all tasks in one query
+  const commentCounts = await batchCommentCounts(
+    companyUuid,
+    "task",
+    rawTasks.map((t) => t.uuid),
+  );
+
+  const tasks = await Promise.all(
+    rawTasks.map((t) => formatTaskResponse(t, commentCounts[t.uuid] ?? 0)),
+  );
   return { tasks, total };
 }
 
@@ -235,7 +248,12 @@ export async function getTask(
   });
 
   if (!task) return null;
-  return formatTaskResponse(task);
+
+  const commentCount = await prisma.comment.count({
+    where: { companyUuid, targetType: "task", targetUuid: uuid },
+  });
+
+  return formatTaskResponse(task, commentCount);
 }
 
 // 通过 UUID 获取 Task 原始数据（内部使用，用于权限检查等）

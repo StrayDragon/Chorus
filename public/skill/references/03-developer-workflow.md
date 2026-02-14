@@ -93,9 +93,18 @@ Check:
 
 ### Step 4: Gather Context
 
-Before coding, understand the full picture. **Task comments are especially important** — they contain previous agents' work reports (files created, commits made, progress notes), review feedback, and discussion history. Reading comments first lets you pick up exactly where the last agent left off.
+Before coding, understand the full picture. You need to read your task, its upstream dependencies, the originating proposal, and project documents. Each task and proposal includes a `commentCount` field — use it to decide which entities have discussions worth reading.
 
-1. **Read task comments first** (contains previous work reports, progress, and feedback):
+1. **Read the task details and identify dependencies:**
+   ```
+   chorus_get_task({ taskUuid: "<task-uuid>" })
+   ```
+   The response includes `dependsOn` (upstream tasks) and `commentCount`. Pay attention to:
+   - Task description and acceptance criteria
+   - `dependsOn` array — these are tasks that must be completed before yours
+   - `commentCount` — if > 0, there are comments you should read
+
+2. **Read task comments** (contains previous work reports, progress, and feedback):
    ```
    chorus_get_comments({ targetType: "task", targetUuid: "<task-uuid>" })
    ```
@@ -105,23 +114,38 @@ Before coding, understand the full picture. **Task comments are especially impor
    - Review feedback from Admin (if task was reopened)
    - Questions or decisions from other agents
 
-2. **Read the task details:**
+3. **Review upstream dependency tasks.** If your task has `dependsOn` entries, read each dependency to understand what was built before you. Your work likely builds on theirs:
    ```
-   chorus_get_task({ taskUuid: "<task-uuid>" })
+   # For each task in dependsOn:
+   chorus_get_task({ taskUuid: "<dependency-task-uuid>" })
+   # If commentCount > 0, read the comments for implementation details:
+   chorus_get_comments({ targetType: "task", targetUuid: "<dependency-task-uuid>" })
    ```
+   Look for:
+   - What files were created or modified (from work reports in comments)
+   - API contracts, data models, or interfaces your task should integrate with
+   - Any decisions or trade-offs that affect your implementation
 
-3. **Read related documents** (PRD, tech design):
+4. **Read the originating proposal** to understand the bigger design intent. Your task's `proposalUuid` links to the proposal that created it:
+   ```
+   chorus_get_proposal({ proposalUuid: "<proposal-uuid>" })
+   # If the proposal has comments with design discussions:
+   chorus_get_comments({ targetType: "proposal", targetUuid: "<proposal-uuid>" })
+   ```
+   The proposal contains the original document drafts (PRD) and task drafts with the PM's reasoning for the task breakdown and dependency DAG.
+
+5. **Read related project documents** (PRD, tech design, ADR):
    ```
    chorus_get_documents({ projectUuid: "<project-uuid>" })
    chorus_get_document({ documentUuid: "<doc-uuid>" })
    ```
 
-4. **Check the project overview:**
+6. **Check the project overview:**
    ```
    chorus_get_project({ projectUuid: "<project-uuid>" })
    ```
 
-5. **Check other tasks** in the same project to understand the broader scope:
+7. **Check other tasks** in the same project to understand the broader scope. Each task includes `commentCount` so you can quickly see which tasks have active discussions:
    ```
    chorus_list_tasks({ projectUuid: "<project-uuid>" })
    ```
@@ -304,6 +328,9 @@ chorus_add_comment({
 ## Tips
 
 - **Always read task comments first** — they contain previous work reports, enabling you to resume from where the last agent stopped
+- **Check upstream dependencies** — read `dependsOn` tasks and their comments to understand what was built before you and what interfaces/APIs you need to integrate with
+- **Read the originating proposal** — it contains the PM's design rationale and the full task DAG, helping you understand how your task fits into the larger feature
+- **Use `commentCount`** — tasks and proposals with `commentCount > 0` have discussions worth reading; skip fetching comments on entities with count 0
 - Always read the full task description and acceptance criteria before starting
 - Check related documents (PRD, tech design) for architectural context
 - **Report progress frequently** — include file paths, commits, and PRs so the next agent has full context
