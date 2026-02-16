@@ -162,7 +162,12 @@ chorus_close_session({ sessionUuid: "<session-uuid>" })
 
 For a complete guide on integrating Claude Code Agent Teams with Chorus sessions, see **[06-claude-code-agent-teams.md](06-claude-code-agent-teams.md)**.
 
-Summary: The Team Lead creates one Chorus session per sub-agent, spawns sub-agents with session + task UUIDs in the prompt, and each sub-agent independently manages its own Chorus task lifecycle (checkin → in_progress → report → checkout → submit). The Team Lead monitors completion and closes sessions when done.
+Two modes are supported:
+
+- **Plugin Mode** (recommended): The Chorus Plugin automates session create/reuse/heartbeat/close. The Team Lead does NOT create sessions manually — only passes task UUIDs to sub-agents. Sub-agents discover their session UUID from `.chorus/sessions/<name>.json`.
+- **Manual Mode**: The Team Lead creates one Chorus session per sub-agent (after checking for reusable sessions with `chorus_list_sessions`), passes session + task UUIDs in the prompt, and closes sessions when done.
+
+In both modes, each sub-agent independently manages its own Chorus task lifecycle (checkin → in_progress → report → checkout → submit).
 
 ---
 

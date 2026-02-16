@@ -1,0 +1,8 @@
+{
+  "name": "chorus",
+  "description": "Chorus AI-DLC collaboration platform — auto session lifecycle via hooks",
+  "version": "0.1.0",
+  "author": {
+    "name": "Chorus"
+  }
+}

@@ -54,5 +54,8 @@ default_deploy.sh
 packages/chorus-cdk/lib/*.js
 packages/chorus-cdk/lib/*.d.ts
 
+# Chorus plugin state
+.chorus/
+
 #demo
 dev-story-demo/
