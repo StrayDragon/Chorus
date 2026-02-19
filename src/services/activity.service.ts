@@ -3,6 +3,7 @@
 // UUID-Based Architecture: All operations use UUIDs
 
 import { prisma } from "@/lib/prisma";
+import { eventBus } from "@/lib/event-bus";
 import { getActorName } from "@/lib/uuid-resolver";
 
 export type TargetType = "idea" | "task" | "proposal" | "document";
@@ -125,7 +126,7 @@ export async function createActivity({
   sessionUuid,
   sessionName,
 }: ActivityCreateParams) {
-  return prisma.activity.create({
+  const activity = await prisma.activity.create({
     data: {
       companyUuid,
       projectUuid,
@@ -139,4 +140,20 @@ export async function createActivity({
       sessionName: sessionName || undefined,
     },
   });
+
+  eventBus.emit("activity", {
+    companyUuid,
+    projectUuid,
+    targetType,
+    targetUuid,
+    actorType,
+    actorUuid,
+    action,
+    value,
+    sessionUuid,
+    sessionName,
+    uuid: activity.uuid,
+  });
+
+  return activity;
 }

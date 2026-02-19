@@ -635,5 +635,50 @@
   },
   "pixelCanvas": {
     "title": "Workspace"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No notifications",
+    "noUnread": "No unread notifications",
+    "viewAll": "View all",
+    "tabAll": "All",
+    "tabUnread": "Unread",
+    "justNow": "Just now",
+    "minutesAgo": "{count} min ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "projectBadge": "Project",
+    "notificationPreferences": "Notification Preferences",
+    "loadMore": "Load more",
+    "types": {
+      "proposal_approved": "Proposal approved",
+      "proposal_rejected": "Proposal rejected",
+      "proposal_submitted": "Proposal submitted",
+      "task_assigned": "Task assigned to you",
+      "task_status_changed": "Task status changed",
+      "task_submitted_for_verify": "Task submitted for verification",
+      "task_verified": "Task verified",
+      "task_reopened": "Task reopened",
+      "comment_added": "New comment",
+      "idea_claimed": "Idea claimed"
+    },
+    "preferences": {
+      "title": "Notification Preferences",
+      "description": "Configure which events trigger notifications",
+      "taskEvents": "Task Events",
+      "proposalEvents": "Proposal Events",
+      "ideaEvents": "Idea Events",
+      "commentEvents": "Comment Events",
+      "taskAssigned": "Task assigned",
+      "taskStatusChanged": "Task status changed",
+      "taskVerified": "Task verified",
+      "taskReopened": "Task reopened",
+      "proposalSubmitted": "Proposal submitted",
+      "proposalApproved": "Proposal approved",
+      "proposalRejected": "Proposal rejected",
+      "ideaClaimed": "Idea claimed",
+      "commentAdded": "Comment added"
+    }
   }
 }

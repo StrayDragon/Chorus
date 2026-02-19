@@ -22,6 +22,8 @@ import {
 import { getAccessToken, authFetch, logout as authLogout, clearUserManager } from "@/lib/auth-client";
 import { PixelCanvasWidget } from "@/components/pixel-canvas-widget";
 import { RealtimeProvider } from "@/contexts/realtime-context";
+import { NotificationProvider } from "@/contexts/notification-context";
+import { NotificationBell } from "@/components/notification-bell";
 
 interface User {
   uuid: string;
@@ -183,16 +185,20 @@ export default function DashboardLayout({
   };
 
   return (
+    <NotificationProvider>
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="sticky top-0 flex h-screen w-[220px] flex-shrink-0 flex-col justify-between overflow-y-auto border-r border-border bg-card">
         <div className="flex flex-col gap-8 p-6">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <img src="/chorus-icon.png" alt="Chorus" className="h-7 w-7" />
-            <span className="text-base font-semibold text-foreground">
-              {t("common.appName")}
-            </span>
+          {/* Logo + Notification Bell */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <img src="/chorus-icon.png" alt="Chorus" className="h-7 w-7" />
+              <span className="text-base font-semibold text-foreground">
+                {t("common.appName")}
+              </span>
+            </div>
+            <NotificationBell />
           </div>
 
           {/* Navigation */}
@@ -359,5 +365,6 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-auto">{children}</main>
       )}
     </div>
+    </NotificationProvider>
   );
 }

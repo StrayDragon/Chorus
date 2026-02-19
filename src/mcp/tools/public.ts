@@ -13,6 +13,7 @@ import * as proposalService from "@/services/proposal.service";
 import * as activityService from "@/services/activity.service";
 import * as commentService from "@/services/comment.service";
 import * as assignmentService from "@/services/assignment.service";
+import * as notificationService from "@/services/notification.service";
 import { prisma } from "@/lib/prisma";
 
 export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
@@ -268,6 +269,20 @@ export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
           authorUuid: auth.actorUuid,
         });
 
+        // Resolve projectUuid from the target entity
+        const projectUuid = await commentService.resolveProjectUuid(targetType, targetUuid);
+        if (projectUuid) {
+          await activityService.createActivity({
+            companyUuid: auth.companyUuid,
+            projectUuid,
+            targetType: targetType as "idea" | "proposal" | "task" | "document",
+            targetUuid,
+            actorType: "agent",
+            actorUuid: auth.actorUuid,
+            action: "comment_added",
+          });
+        }
+
         return {
           content: [{ type: "text", text: JSON.stringify(comment, null, 2) }],
         };
@@ -521,6 +536,54 @@ export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
       return {
         content: [{ type: "text", text: JSON.stringify({ comments, total, page, pageSize }, null, 2) }],
       };
+    }
+  );
+
+  // chorus_get_notifications - 获取当前 Agent 的通知列表
+  server.registerTool(
+    "chorus_get_notifications",
+    {
+      description: "获取当前 Agent 的通知列表",
+      inputSchema: z.object({
+        status: z.enum(["unread", "read", "all"]).default("unread").optional().describe("筛选状态"),
+        limit: z.number().default(20).optional().describe("每页数量"),
+        offset: z.number().default(0).optional().describe("偏移量"),
+      }),
+    },
+    async (params) => {
+      const statusValue = params.status ?? "unread";
+      const result = await notificationService.list({
+        companyUuid: auth.companyUuid,
+        recipientType: auth.type,
+        recipientUuid: auth.actorUuid,
+        readFilter: statusValue === "unread" ? "unread" : statusValue === "read" ? "read" : "all",
+        skip: params.offset ?? 0,
+        take: params.limit ?? 20,
+      });
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    }
+  );
+
+  // chorus_mark_notification_read - 标记通知为已读（单条或全部）
+  server.registerTool(
+    "chorus_mark_notification_read",
+    {
+      description: "标记通知为已读（单条或全部）",
+      inputSchema: z.object({
+        notificationUuid: z.string().optional().describe("单条通知 UUID"),
+        all: z.boolean().default(false).optional().describe("是否标记全部已读"),
+      }),
+    },
+    async (params) => {
+      if (params.all) {
+        const { count } = await notificationService.markAllRead(auth.companyUuid, auth.type, auth.actorUuid);
+        return { content: [{ type: "text" as const, text: JSON.stringify({ markedCount: count }) }] };
+      }
+      if (!params.notificationUuid) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: "notificationUuid or all=true required" }) }], isError: true };
+      }
+      const notification = await notificationService.markRead(params.notificationUuid, auth.companyUuid, auth.type, auth.actorUuid);
+      return { content: [{ type: "text" as const, text: JSON.stringify(notification, null, 2) }] };
     }
   );
 }

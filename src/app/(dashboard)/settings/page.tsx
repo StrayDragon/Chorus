@@ -17,12 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Key, Check, X, Globe, AlertTriangle, ShieldAlert, ChevronDown, ChevronRight, Activity } from "lucide-react";
+import { Plus, Key, Check, X, Globe, AlertTriangle, ShieldAlert, ChevronDown, ChevronRight, Activity, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useLocale } from "@/contexts/locale-context";
 import { getApiKeysAction, createAgentAndKeyAction, deleteApiKeyAction, getAgentSessionsAction, closeSessionAction, reopenSessionAction } from "./actions";
 import type { SessionResponse } from "@/services/session.service";
 import { locales, localeNames, type Locale } from "@/i18n/config";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { NotificationPreferencesForm } from "@/components/notification-preferences-form";
 
 interface ApiKey {
   uuid: string;
@@ -519,6 +521,24 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+
+      <div className="mb-8 border-t border-border" />
+
+      {/* Notifications Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>{t("notifications.preferences.title")}</CardTitle>
+          </div>
+          <CardDescription>
+            {t("notifications.preferences.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <NotificationPreferencesForm />
+        </CardContent>
+      </Card>
 
       {/* Create API Key Modal */}
       {showModal && (

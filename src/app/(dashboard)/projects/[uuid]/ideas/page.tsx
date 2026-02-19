@@ -38,7 +38,7 @@ const statusI18nKeys: Record<string, string> = {
 
 interface PageProps {
   params: Promise<{ uuid: string }>;
-  searchParams: Promise<{ status?: string; assignedToMe?: string }>;
+  searchParams: Promise<{ status?: string; assignedToMe?: string; idea?: string }>;
 }
 
 export default async function IdeasPage({ params, searchParams }: PageProps) {
@@ -48,7 +48,7 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
   }
 
   const { uuid: projectUuid } = await params;
-  const { status: filter = "all", assignedToMe } = await searchParams;
+  const { status: filter = "all", assignedToMe, idea: initialIdeaUuid } = await searchParams;
   const isAssignedToMeFilter = assignedToMe === "true";
   const t = await getTranslations();
 
@@ -178,6 +178,7 @@ export default async function IdeasPage({ params, searchParams }: PageProps) {
           currentUserUuid={auth.actorUuid}
           usedIdeaUuids={usedIdeaUuids}
           ideaProposalMap={ideaProposalMap}
+          initialSelectedIdeaUuid={initialIdeaUuid}
         />
       )}
     </div>

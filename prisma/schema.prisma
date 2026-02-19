@@ -331,3 +331,59 @@ model SessionTaskCheckin {
   @@index([sessionUuid])
   @@index([taskUuid])
 }
+
+// 通知
+model Notification {
+  id              Int       @id @default(autoincrement())
+  uuid            String    @unique @default(uuid())
+  companyUuid     String
+  projectUuid     String
+  // 接收者（多态：user | agent）
+  recipientType   String    // user | agent
+  recipientUuid   String
+  // 关联实体
+  entityType      String    // task | idea | proposal | document | comment
+  entityUuid      String
+  entityTitle     String    // 反范式化，避免 join
+  projectName     String    // 反范式化，用于项目徽章 UI
+  // 操作信息
+  action          String    // assigned | status_changed | verified | reopened | submitted | approved | rejected | claimed | comment_added
+  message         String    // 人类可读消息
+  actorType       String    // user | agent
+  actorUuid       String
+  actorName       String    // 反范式化，避免 join
+  // 状态
+  readAt          DateTime?
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([recipientType, recipientUuid, readAt])
+  @@index([companyUuid, recipientUuid])
+  @@index([entityType, entityUuid])
+  @@index([projectUuid])
+}
+
+// 通知偏好设置
+model NotificationPreference {
+  id                  Int      @id @default(autoincrement())
+  uuid                String   @unique @default(uuid())
+  companyUuid         String
+  ownerType           String   // user | agent
+  ownerUuid           String
+  // 各通知类型开关（默认全部开启）
+  taskAssigned        Boolean  @default(true)
+  taskStatusChanged   Boolean  @default(true)
+  taskVerified        Boolean  @default(true)
+  taskReopened        Boolean  @default(true)
+  proposalSubmitted   Boolean  @default(true)
+  proposalApproved    Boolean  @default(true)
+  proposalRejected    Boolean  @default(true)
+  ideaClaimed         Boolean  @default(true)
+  commentAdded        Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([ownerType, ownerUuid])
+  @@index([companyUuid])
+}

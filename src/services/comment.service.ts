@@ -154,6 +154,33 @@ export async function createComment({
   };
 }
 
+// Resolve projectUuid from a comment target entity
+export async function resolveProjectUuid(
+  targetType: string,
+  targetUuid: string
+): Promise<string | null> {
+  switch (targetType) {
+    case "task": {
+      const task = await prisma.task.findUnique({ where: { uuid: targetUuid }, select: { projectUuid: true } });
+      return task?.projectUuid ?? null;
+    }
+    case "idea": {
+      const idea = await prisma.idea.findUnique({ where: { uuid: targetUuid }, select: { projectUuid: true } });
+      return idea?.projectUuid ?? null;
+    }
+    case "proposal": {
+      const proposal = await prisma.proposal.findUnique({ where: { uuid: targetUuid }, select: { projectUuid: true } });
+      return proposal?.projectUuid ?? null;
+    }
+    case "document": {
+      const doc = await prisma.document.findUnique({ where: { uuid: targetUuid }, select: { projectUuid: true } });
+      return doc?.projectUuid ?? null;
+    }
+    default:
+      return null;
+  }
+}
+
 // 批量获取评论数量
 export async function batchCommentCounts(
   companyUuid: string,

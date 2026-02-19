@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Bot, MessageSquare, FileText, User } from "lucide-react";
@@ -40,6 +40,7 @@ interface IdeasListProps {
   currentUserUuid: string;
   usedIdeaUuids: string[];
   ideaProposalMap: Record<string, string>;
+  initialSelectedIdeaUuid?: string | null;
 }
 
 // Status badge styles: dot color + badge variant className
@@ -83,10 +84,18 @@ export function IdeasList({
   currentUserUuid,
   usedIdeaUuids,
   ideaProposalMap,
+  initialSelectedIdeaUuid,
 }: IdeasListProps) {
   const t = useTranslations();
   useRealtimeRefresh();
-  const [selectedIdeaUuid, setSelectedIdeaUuid] = useState<string | null>(null);
+  const [selectedIdeaUuid, setSelectedIdeaUuid] = useState<string | null>(initialSelectedIdeaUuid ?? null);
+
+  // Sync selected idea when URL query param changes (e.g., clicking a notification)
+  useEffect(() => {
+    if (initialSelectedIdeaUuid) {
+      setSelectedIdeaUuid(initialSelectedIdeaUuid);
+    }
+  }, [initialSelectedIdeaUuid]);
   const usedSet = new Set(usedIdeaUuids);
 
   // Derive selectedIdea from current props — always in sync with server data

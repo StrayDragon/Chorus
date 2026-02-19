@@ -636,5 +636,50 @@
   },
   "pixelCanvas": {
     "title": "工作区"
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标记已读",
+    "noNotifications": "暂无通知",
+    "noUnread": "没有未读通知",
+    "viewAll": "查看全部",
+    "tabAll": "全部",
+    "tabUnread": "未读",
+    "justNow": "刚刚",
+    "minutesAgo": "{count} 分钟前",
+    "hoursAgo": "{count} 小时前",
+    "daysAgo": "{count} 天前",
+    "projectBadge": "项目",
+    "notificationPreferences": "通知偏好",
+    "loadMore": "加载更多",
+    "types": {
+      "proposal_approved": "提案已通过",
+      "proposal_rejected": "提案已拒绝",
+      "proposal_submitted": "提案已提交",
+      "task_assigned": "任务已分配给你",
+      "task_status_changed": "任务状态已变更",
+      "task_submitted_for_verify": "任务已提交验证",
+      "task_verified": "任务已验证",
+      "task_reopened": "任务已重新打开",
+      "comment_added": "新评论",
+      "idea_claimed": "想法已认领"
+    },
+    "preferences": {
+      "title": "通知偏好",
+      "description": "配置哪些事件触发通知",
+      "taskEvents": "任务事件",
+      "proposalEvents": "提案事件",
+      "ideaEvents": "想法事件",
+      "commentEvents": "评论事件",
+      "taskAssigned": "任务分配",
+      "taskStatusChanged": "任务状态变更",
+      "taskVerified": "任务验证",
+      "taskReopened": "任务重新打开",
+      "proposalSubmitted": "提案提交",
+      "proposalApproved": "提案通过",
+      "proposalRejected": "提案拒绝",
+      "ideaClaimed": "想法认领",
+      "commentAdded": "新增评论"
+    }
   }
 }

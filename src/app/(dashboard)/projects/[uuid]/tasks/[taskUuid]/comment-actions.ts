@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { listComments, createComment, type CommentResponse } from "@/services/comment.service";
 import { getTaskByUuid } from "@/services/task.service";
+import { createActivity } from "@/services/activity.service";
 
 export async function getTaskCommentsAction(
   taskUuid: string
@@ -55,6 +56,17 @@ export async function createTaskCommentAction(
       content: content.trim(),
       authorType: auth.type,
       authorUuid: auth.actorUuid,
+    });
+
+    // Record activity for notification pipeline
+    await createActivity({
+      companyUuid: auth.companyUuid,
+      projectUuid: task.projectUuid,
+      targetType: "task",
+      targetUuid: taskUuid,
+      actorType: auth.type,
+      actorUuid: auth.actorUuid,
+      action: "comment_added",
     });
 
     revalidatePath(`/projects/${task.projectUuid}/tasks`);

@@ -81,6 +81,13 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid, initia
     setTasks(initialTasks);
   }, [initialTasks]);
 
+  // Sync selected task when URL query param changes (e.g., clicking a notification)
+  useEffect(() => {
+    if (initialSelectedTaskUuid) {
+      setSelectedTaskUuid(initialSelectedTaskUuid);
+    }
+  }, [initialSelectedTaskUuid]);
+
   // Fetch active worker counts for in-progress tasks
   useEffect(() => {
     if (initialTasks.length === 0) return;
