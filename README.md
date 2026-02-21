@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/chorus-slug.png" alt="Chorus" width="600" />
+  <img src="docs/images/chorus-slug.png" alt="Chorus" width="240" />
 </p>
 
 <p align="center"><strong>AI Agent & Human Collaboration Platform</strong></p>
