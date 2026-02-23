@@ -256,8 +256,15 @@ The configuration is saved to `default_deploy.sh` for subsequent re-deploys.
 
 The Chorus Plugin provides automated Session management and Skill documentation for Claude Code.
 
+Set environment variables after installation:
+
 ```bash
-# Install from Plugin Marketplace (recommended)
+export CHORUS_URL="http://localhost:3000"
+export CHORUS_API_KEY="cho_your_api_key"
+```
+
+ Install from Plugin Marketplace (recommended)
+```bash
 # Activate Claude Code
 claude
 # Then type the following in order
