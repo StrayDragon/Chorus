@@ -38,26 +38,35 @@ RUN pnpm install --frozen-lockfile || pnpm install
 COPY . .
 RUN pnpm build
 
-# Production stage
+# Production stage (standalone)
 FROM node:22-alpine AS production
 
-# Install OpenSSL for Prisma runtime and enable corepack for pnpm
 RUN apk add --no-cache openssl && corepack enable
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy necessary files
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
-COPY --from=builder /app/.next ./.next
+# Copy standalone server (includes server.js + minimal node_modules)
+COPY --from=builder /app/.next/standalone ./
+
+# Copy static assets and public files (not included in standalone)
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# public/skill/ already exists as standalone skill docs (served at /skill/ path)
-COPY --from=builder /app/node_modules ./node_modules
+# Copy Prisma schema + config for migrations
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
-COPY --from=builder /app/src/generated ./src/generated
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Install prisma CLI globally for database migrations
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN pnpm add -g prisma
+
+# Copy dotenv for prisma.config.ts (standalone bundles it into server.js but doesn't keep the module)
+COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
@@ -65,5 +74,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 3000
 
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=3000
+
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["pnpm", "start"]
+CMD ["node", "server.js"]

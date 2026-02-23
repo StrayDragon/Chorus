@@ -157,26 +157,38 @@ Records all participant actions with Session attribution (AgentName / SessionNam
 | Auth | OIDC + PKCE (users) / API Key `cho_` prefix (agents) / SuperAdmin |
 | i18n | next-intl (en, zh) |
 | Package Manager | pnpm 9.15 |
-| Deployment | Docker Compose / AWS CDK |
+| Deployment | [Docker Hub](https://hub.docker.com/repository/docker/chorusaidlc/chorus-app/general) / Docker Compose / AWS CDK |
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### Quick Start with Docker (Recommended)
 
-- Docker & Docker Compose
-- Node.js 22+
-- pnpm 9+
-- OIDC Provider (e.g., Auth0, Cognito, Keycloak)
-
-### Setup
+The fastest way to run Chorus — no build tools required:
 
 ```bash
-# Clone the repository
+# Clone the repository (for docker-compose.yml)
 git clone https://github.com/Chorus-AIDLC/chorus.git
 cd chorus
 
+# Start with the pre-built image from Docker Hub
+DEFAULT_USER=admin@example.com DEFAULT_PASSWORD=changeme \
+  docker compose up -d
+
+# Open
+open http://localhost:3000
+```
+
+This pulls [`chorusaidlc/chorus-app`](https://hub.docker.com/repository/docker/chorusaidlc/chorus-app/general) (supports amd64 & arm64), starts PostgreSQL and Redis alongside it, and runs database migrations automatically.
+
+> See [Docker Documentation](docs/DOCKER.md) for all environment variables and configuration options.
+
+### Local Development
+
+Prerequisites: Node.js 22+, pnpm 9+, Docker (for PostgreSQL/Redis)
+
+```bash
 # Configure environment variables
 cp .env.example .env
 # Edit .env to configure database connection and OIDC
@@ -192,6 +204,24 @@ pnpm dev
 # Open
 open http://localhost:3000
 ```
+
+### Deploy to AWS
+
+Deploy Chorus to AWS with a single command using the included CDK installer. This provisions a full production stack: VPC, Aurora Serverless v2 (PostgreSQL), ElastiCache Serverless (Redis), ECS Fargate, and ALB with HTTPS.
+
+Prerequisites: AWS CLI (configured), Node.js 22+, pnpm 9+
+
+```bash
+./install.sh
+```
+
+The interactive installer will prompt for:
+- **Stack name** — CloudFormation stack name (default: `Chorus`)
+- **ACM Certificate ARN** — SSL certificate for HTTPS (required)
+- **Custom domain** — e.g. `chorus.example.com` (optional)
+- **Super admin email & password** — for the `/admin` panel
+
+The configuration is saved to `default_deploy.sh` for subsequent re-deploys.
 
 ### Connect AI Agents
 
@@ -294,6 +324,7 @@ Based on the [AI-DLC methodology](https://aws.amazon.com/blogs/devops/ai-driven-
 | [MCP Tools](docs/MCP_TOOLS.md) | MCP Tools Reference |
 | [Chorus Plugin](docs/chorus-plugin.md) | Plugin Design & Hook Documentation |
 | [AI-DLC Gap Analysis](docs/AIDLC_GAP_ANALYSIS.md) | AI-DLC Methodology Gap Analysis |
+| [Docker](docs/DOCKER.md) | Docker image usage, environment variables, deployment |
 | [CLAUDE.md](CLAUDE.md) | Development Guide (coding conventions for AI Agents) |
 
 ---

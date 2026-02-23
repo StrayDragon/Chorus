@@ -10,7 +10,7 @@ echo "Running database migrations (will retry for ~5 minutes while waiting for D
 MAX_RETRIES=30
 RETRY_INTERVAL=10
 RETRY_COUNT=0
-until pnpm db:migrate; do
+until prisma migrate deploy; do
   RETRY_COUNT=$((RETRY_COUNT + 1))
   if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
     echo "Migration failed after ${MAX_RETRIES} retries. Exiting."

@@ -1,0 +1,148 @@
+# Chorus Docker Image
+
+**`chorusaidlc/chorus-app`** — The official Docker image for [Chorus](https://github.com/Chorus-AIDLC/Chorus), an AI Agent & Human collaboration platform implementing the AI-DLC (AI-Driven Development Lifecycle) workflow.
+
+## Quick Start
+
+```bash
+docker pull chorusaidlc/chorus-app:latest
+```
+
+### Docker Compose (Recommended)
+
+Create a `docker-compose.yml`:
+
+```yaml
+services:
+  app:
+    image: chorusaidlc/chorus-app:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://chorus:chorus@db:5432/chorus
+      - REDIS_URL=redis://default:chorus-redis@redis:6379
+      - NEXTAUTH_SECRET=change-me-to-a-random-secret
+      - DEFAULT_USER=admin@example.com
+      - DEFAULT_PASSWORD=your-password
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass chorus-redis
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "chorus-redis", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: chorus
+      POSTGRES_PASSWORD: chorus
+      POSTGRES_DB: chorus
+    volumes:
+      - chorus-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chorus -d chorus"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  chorus-data:
+  redis-data:
+```
+
+Then run:
+
+```bash
+docker compose up -d
+```
+
+Open http://localhost:3000 and log in with the credentials you set in `DEFAULT_USER` / `DEFAULT_PASSWORD`.
+
+### Docker Run (Standalone)
+
+If you already have PostgreSQL and Redis running:
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -e DATABASE_URL=postgresql://user:pass@your-db-host:5432/chorus \
+  -e REDIS_URL=redis://default:password@your-redis-host:6379 \
+  -e NEXTAUTH_SECRET=change-me-to-a-random-secret \
+  -e DEFAULT_USER=admin@example.com \
+  -e DEFAULT_PASSWORD=your-password \
+  chorusaidlc/chorus-app:latest
+```
+
+## Environment Variables
+
+### Required
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string. Format: `postgresql://user:password@host:port/dbname`. Alternatively, set individual `DB_*` variables (see below). |
+| `NEXTAUTH_SECRET` | Secret key for signing JWT session tokens. Use a random string (e.g., `openssl rand -base64 32`). |
+
+### Database (Alternative to DATABASE_URL)
+
+If `DATABASE_URL` is not set, the entrypoint builds it from these individual variables:
+
+| Variable | Description |
+|---|---|
+| `DB_HOST` | PostgreSQL host |
+| `DB_PORT` | PostgreSQL port (default: `5432`) |
+| `DB_USERNAME` | PostgreSQL username |
+| `DB_PASSWORD` | PostgreSQL password |
+| `DB_NAME` | Database name |
+
+### Redis
+
+| Variable | Description |
+|---|---|
+| `REDIS_URL` | Full Redis connection string. Format: `redis://username:password@host:port`. Takes precedence over individual variables. |
+| `REDIS_HOST` | Redis host (used if `REDIS_URL` is not set) |
+| `REDIS_PORT` | Redis port (default: `6379`) |
+| `REDIS_USERNAME` | Redis username (default: `default`) |
+| `REDIS_PASSWORD` | Redis password |
+
+### Authentication
+
+| Variable | Description |
+|---|---|
+| `DEFAULT_USER` | Email address for built-in login (bypasses OIDC). Auto-provisions the user and company on first login. |
+| `DEFAULT_PASSWORD` | Password for the default user (plain text, compared via bcrypt at runtime). |
+| `NEXTAUTH_URL` | Public-facing base URL of the app (default: `http://localhost:3000`). Set this when running behind a reverse proxy. |
+
+### Super Admin
+
+| Variable | Description |
+|---|---|
+| `SUPER_ADMIN_EMAIL` | Email for the super admin account (has access to `/admin` panel). |
+| `SUPER_ADMIN_PASSWORD_HASH` | Bcrypt hash of the super admin password. Generate with: `node -e "require('bcrypt').hash('password',10).then(console.log)"` |
+
+## Image Details
+
+- **Base image**: `node:22-alpine`
+- **Exposed port**: `3000`
+- **Entrypoint**: Runs Prisma migrations automatically on startup (retries for up to 5 minutes while waiting for the database)
+- **Build**: Next.js standalone output for minimal image size
+- **Architectures**: `linux/amd64`, `linux/arm64`
+
+## Startup Behavior
+
+1. The entrypoint script runs `prisma migrate deploy` to apply any pending database migrations
+2. If the database is not ready, it retries every 10 seconds (up to 30 attempts)
+3. Once migrations succeed, the Next.js server starts on port 3000
+
+## Source Code
+
+https://github.com/Chorus-AIDLC/Chorus

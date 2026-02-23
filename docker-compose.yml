@@ -1,28 +1,23 @@
 services:
   app:
-    profiles:
-      - full  # 只在 --profile full 时启动
+    image: chorusaidlc/chorus-app:latest
     build:
       context: .
       dockerfile: Dockerfile
+      target: production
     ports:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://chorus:chorus@db:5432/chorus
-      - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-development-secret-change-in-production}
       - REDIS_URL=redis://default:chorus-redis@redis:6379
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-chorus-docker-secret-change-in-production}
+      - DEFAULT_USER=${DEFAULT_USER:-}
+      - DEFAULT_PASSWORD=${DEFAULT_PASSWORD:-}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      # 开发模式：挂载源代码
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-    command: pnpm run dev
 
   redis:
     image: redis:7-alpine
