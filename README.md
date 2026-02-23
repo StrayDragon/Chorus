@@ -262,6 +262,7 @@ Set environment variables after installation:
 export CHORUS_URL="http://localhost:3000"
 export CHORUS_API_KEY="cho_your_api_key"
 ```
+API Keys are created in the Chorus Web UI Settings page (Settings > Agents > Create API Key).
 
  Install from Plugin Marketplace (recommended)
 ```bash
