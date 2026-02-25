@@ -125,8 +125,17 @@ hook_output() {
   local system_message="$1"
   local additional_context="${2:-}"
   local hook_event_name="${3:-}"
+  local updated_input_json="${4:-}"  # Optional: raw JSON object for updatedInput
   if command -v jq &>/dev/null; then
-    if [ -n "$additional_context" ]; then
+    if [ -n "$updated_input_json" ]; then
+      # Build output with updatedInput (for PreToolUse parameter modification)
+      jq -n \
+        --arg sm "$system_message" \
+        --arg ac "$additional_context" \
+        --arg hen "$hook_event_name" \
+        --argjson ui "$updated_input_json" \
+        '{systemMessage: $sm, hookSpecificOutput: {hookEventName: $hen, additionalContext: $ac, updatedInput: $ui}}'
+    elif [ -n "$additional_context" ]; then
       jq -n \
         --arg sm "$system_message" \
         --arg ac "$additional_context" \
@@ -305,7 +314,7 @@ case "$cmd" in
   state-delete)     state_delete "${1:-}" ;;
   session-read)     session_file_read "${1:-}" ;;
   session-list)     session_file_list ;;
-  hook-output)      hook_output "${1:-}" "${2:-}" "${3:-}" ;;
+  hook-output)      hook_output "${1:-}" "${2:-}" "${3:-}" "${4:-}" ;;
   *)
     echo "Usage: chorus-api.sh <command> [args...]"
     echo ""

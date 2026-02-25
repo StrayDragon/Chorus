@@ -15,6 +15,7 @@ import * as commentService from "@/services/comment.service";
 import * as assignmentService from "@/services/assignment.service";
 import * as notificationService from "@/services/notification.service";
 import * as elaborationService from "@/services/elaboration.service";
+import * as projectGroupService from "@/services/project-group.service";
 import { prisma } from "@/lib/prisma";
 
 export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
@@ -663,6 +664,63 @@ export function registerPublicTools(server: McpServer, auth: AgentAuthContext) {
           isError: true,
         };
       }
+    }
+  );
+
+  // ===== Project Group Tools =====
+
+  // chorus_get_project_groups - List all project groups
+  server.registerTool(
+    "chorus_get_project_groups",
+    {
+      description: "List all project groups for the current company. Returns groups with project counts.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      const result = await projectGroupService.listProjectGroups(auth.companyUuid);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  // chorus_get_project_group - Get a single project group by UUID
+  server.registerTool(
+    "chorus_get_project_group",
+    {
+      description: "Get a single project group by UUID with its projects list.",
+      inputSchema: z.object({
+        groupUuid: z.string().describe("Project Group UUID"),
+      }),
+    },
+    async ({ groupUuid }) => {
+      const group = await projectGroupService.getProjectGroup(auth.companyUuid, groupUuid);
+      if (!group) {
+        return { content: [{ type: "text", text: "Project group not found" }], isError: true };
+      }
+      return {
+        content: [{ type: "text", text: JSON.stringify(group, null, 2) }],
+      };
+    }
+  );
+
+  // chorus_get_group_dashboard - Get aggregated dashboard stats for a project group
+  server.registerTool(
+    "chorus_get_group_dashboard",
+    {
+      description: "Get aggregated dashboard stats for a project group (project count, tasks, completion rate, ideas, proposals, activity stream).",
+      inputSchema: z.object({
+        groupUuid: z.string().describe("Project Group UUID"),
+      }),
+    },
+    async ({ groupUuid }) => {
+      const dashboard = await projectGroupService.getGroupDashboard(auth.companyUuid, groupUuid);
+      if (!dashboard) {
+        return { content: [{ type: "text", text: "Project group not found" }], isError: true };
+      }
+      return {
+        content: [{ type: "text", text: JSON.stringify(dashboard, null, 2) }],
+      };
     }
   );
 }

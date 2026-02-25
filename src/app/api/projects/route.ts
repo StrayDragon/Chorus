@@ -27,6 +27,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
         uuid: true,
         name: true,
         description: true,
+        groupUuid: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -49,6 +50,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     uuid: p.uuid,
     name: p.name,
     description: p.description,
+    groupUuid: p.groupUuid,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
     counts: {
@@ -77,6 +79,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const body = await parseBody<{
     name: string;
     description?: string;
+    groupUuid?: string;
   }>(request);
 
   // Validate required fields
@@ -84,11 +87,22 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return errors.validationError({ name: "Name is required" });
   }
 
+  // Validate groupUuid belongs to the same company if provided
+  if (body.groupUuid) {
+    const group = await prisma.projectGroup.findFirst({
+      where: { uuid: body.groupUuid, companyUuid: auth.companyUuid },
+    });
+    if (!group) {
+      return errors.notFound("Project Group");
+    }
+  }
+
   const project = await prisma.project.create({
     data: {
       companyUuid: auth.companyUuid,
       name: body.name.trim(),
       description: body.description?.trim() || null,
+      groupUuid: body.groupUuid || null,
     },
     select: {
       uuid: true,

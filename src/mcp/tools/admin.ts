@@ -12,27 +12,30 @@ import * as taskService from "@/services/task.service";
 import * as ideaService from "@/services/idea.service";
 import * as documentService from "@/services/document.service";
 import * as activityService from "@/services/activity.service";
+import * as projectGroupService from "@/services/project-group.service";
 
 export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
   // chorus_admin_create_project - Create a new project
   server.registerTool(
     "chorus_admin_create_project",
     {
-      description: "Create a new project (Admin exclusive, acts on behalf of humans)",
+      description: "Create a new project (Admin exclusive, acts on behalf of humans). To assign to a project group, first call chorus_get_project_groups to list available groups, then pass the groupUuid.",
       inputSchema: z.object({
         name: z.string().describe("Project name"),
         description: z.string().optional().describe("Project description"),
+        groupUuid: z.string().optional().describe("Optional project group UUID to assign this project to. Use chorus_get_project_groups to list available groups."),
       }),
     },
-    async ({ name, description }) => {
+    async ({ name, description, groupUuid }) => {
       const project = await projectService.createProject({
         companyUuid: auth.companyUuid,
         name,
         description: description || null,
+        groupUuid: groupUuid || null,
       });
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ uuid: project.uuid, name: project.name }) }],
+        content: [{ type: "text", text: JSON.stringify({ uuid: project.uuid, name: project.name, groupUuid: project.groupUuid }) }],
       };
     }
   );
@@ -412,6 +415,109 @@ export function registerAdminTools(server: McpServer, auth: AgentAuthContext) {
 
       return {
         content: [{ type: "text", text: JSON.stringify({ uuid: updated.uuid, status: updated.status }) }],
+      };
+    }
+  );
+
+  // ===== Project Group Admin Tools =====
+
+  // chorus_admin_create_project_group - Create a new project group
+  server.registerTool(
+    "chorus_admin_create_project_group",
+    {
+      description: "Create a new project group (Admin exclusive)",
+      inputSchema: z.object({
+        name: z.string().describe("Project group name"),
+        description: z.string().optional().describe("Project group description"),
+      }),
+    },
+    async ({ name, description }) => {
+      const group = await projectGroupService.createProjectGroup({
+        companyUuid: auth.companyUuid,
+        name,
+        description: description || null,
+      });
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(group, null, 2) }],
+      };
+    }
+  );
+
+  // chorus_admin_update_project_group - Update a project group
+  server.registerTool(
+    "chorus_admin_update_project_group",
+    {
+      description: "Update a project group (Admin exclusive)",
+      inputSchema: z.object({
+        groupUuid: z.string().describe("Project Group UUID"),
+        name: z.string().optional().describe("New group name"),
+        description: z.string().optional().describe("New group description"),
+      }),
+    },
+    async ({ groupUuid, name, description }) => {
+      const group = await projectGroupService.updateProjectGroup({
+        companyUuid: auth.companyUuid,
+        groupUuid,
+        name,
+        description,
+      });
+
+      if (!group) {
+        return { content: [{ type: "text", text: "Project group not found" }], isError: true };
+      }
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(group, null, 2) }],
+      };
+    }
+  );
+
+  // chorus_admin_delete_project_group - Delete a project group
+  server.registerTool(
+    "chorus_admin_delete_project_group",
+    {
+      description: "Delete a project group (Admin exclusive). Projects in the group become ungrouped.",
+      inputSchema: z.object({
+        groupUuid: z.string().describe("Project Group UUID"),
+      }),
+    },
+    async ({ groupUuid }) => {
+      const deleted = await projectGroupService.deleteProjectGroup(auth.companyUuid, groupUuid);
+
+      if (!deleted) {
+        return { content: [{ type: "text", text: "Project group not found" }], isError: true };
+      }
+
+      return {
+        content: [{ type: "text", text: `Project group ${groupUuid} deleted` }],
+      };
+    }
+  );
+
+  // chorus_admin_move_project_to_group - Move a project to a group or ungroup it
+  server.registerTool(
+    "chorus_admin_move_project_to_group",
+    {
+      description: "Move a project to a different group or ungroup it (Admin exclusive). Set groupUuid to null to ungroup.",
+      inputSchema: z.object({
+        projectUuid: z.string().describe("Project UUID"),
+        groupUuid: z.string().nullable().describe("Target Project Group UUID (null to ungroup)"),
+      }),
+    },
+    async ({ projectUuid, groupUuid }) => {
+      const result = await projectGroupService.moveProjectToGroup(
+        auth.companyUuid,
+        projectUuid,
+        groupUuid
+      );
+
+      if (!result) {
+        return { content: [{ type: "text", text: "Project or project group not found" }], isError: true };
+      }
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
     }
   );

@@ -34,7 +34,7 @@ Without a session checkin, the UI cannot show that an agent is actively working 
 
 For the full Claude Code Agent Teams integration guide, see **[06-claude-code-agent-teams.md](06-claude-code-agent-teams.md)**.
 
-The Chorus Plugin **fully automates** session lifecycle for Claude Code Agent Teams. When a sub-agent is spawned, the plugin automatically creates (or reuses) a Chorus session and writes the session UUID to `.chorus/sessions/<name>.json`. When the sub-agent goes idle, the plugin sends heartbeats. When the sub-agent exits, the plugin closes the session. The Team Lead does NOT manage sessions for sub-agents.
+The Chorus Plugin **fully automates** session lifecycle for Claude Code Agent Teams. When a sub-agent is spawned, the plugin automatically creates (or reuses) a Chorus session and injects the session UUID + workflow instructions directly into the sub-agent's context via the SubagentStart hook. When the sub-agent goes idle, the plugin sends heartbeats. When the sub-agent exits, the plugin closes the session. The Team Lead does NOT manage sessions for sub-agents.
 
 | Claude Code Concept | Chorus Concept | Description |
 |---------------------|----------------|-------------|
@@ -137,7 +137,7 @@ For a complete guide on integrating Claude Code Agent Teams with Chorus sessions
 The Chorus Plugin **fully automates** session lifecycle for Agent Teams:
 
 - **Session creation**: When the Team Lead spawns a sub-agent, the plugin automatically creates a new session (or reopens an existing one with the same name). The Team Lead does NOT call `chorus_create_session` for sub-agents.
-- **Session discovery**: Sub-agents read their session UUID from `.chorus/sessions/<name>.json` (where `<name>` matches the sub-agent's `name` parameter in the `Task` tool call).
+- **Session discovery**: The plugin automatically injects the session UUID and workflow instructions directly into the sub-agent's context via the SubagentStart hook. Sub-agents do NOT need to read any session files.
 - **Heartbeat**: The plugin sends heartbeats automatically when a sub-agent goes idle, keeping the session active.
 - **Session close**: When a sub-agent exits, the plugin closes its session automatically. The Team Lead does NOT call `chorus_close_session` for sub-agents.
 
@@ -183,4 +183,4 @@ Session data is visible in the following UI locations:
 - **report_work includes auto-heartbeat** — Calling `chorus_report_work` with `sessionUuid` automatically updates the heartbeat; no need to call heartbeat separately.
 - **close_session includes auto-checkout** — Closing a session automatically checks out all active task checkins.
 - **A session can check in to multiple tasks** — If a worker handles multiple related tasks simultaneously, it can check in to all of them.
-- **Session file location** — Sub-agents find their session UUID at `.chorus/sessions/<name>.json`. If the file is missing, ensure the sub-agent was spawned with a `name` parameter.
+- **Session auto-injection** — The plugin injects session UUID and workflow into each sub-agent's context automatically via the SubagentStart hook. No file reading required.

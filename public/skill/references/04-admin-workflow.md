@@ -18,7 +18,7 @@ Admin is the **human proxy role** - you act on behalf of the human project owner
 
 | Tool | Purpose |
 |------|---------|
-| `chorus_admin_create_project` | Create a new project |
+| `chorus_admin_create_project` | Create a new project (supports optional `groupUuid` to assign to a group) |
 | `chorus_admin_create_idea` | Create an idea (on behalf of human) |
 | `chorus_admin_approve_proposal` | Approve proposal (materializes documents + tasks) |
 | `chorus_admin_reject_proposal` | Reject proposal with review note |
@@ -29,6 +29,10 @@ Admin is the **human proxy role** - you act on behalf of the human project owner
 | `chorus_admin_delete_idea` | Delete an idea permanently |
 | `chorus_admin_delete_task` | Delete a task permanently |
 | `chorus_admin_delete_document` | Delete a document permanently |
+| `chorus_admin_create_project_group` | Create a new project group |
+| `chorus_admin_update_project_group` | Update a project group (name, description) |
+| `chorus_admin_delete_project_group` | Delete a project group (projects become ungrouped) |
+| `chorus_admin_move_project_to_group` | Move a project to a group or ungroup it (set groupUuid to null) |
 
 ---
 
@@ -72,11 +76,32 @@ Prioritize: Proposals first (they unblock PM and Developer work), then task veri
 
 ### Create a New Project
 
+To assign the project to a group, first list available groups with `chorus_get_project_groups()`, then pass the `groupUuid`. If omitted, the project will be ungrouped.
+
 ```
 chorus_admin_create_project({
   name: "My Project",
-  description: "Project description and goals..."
+  description: "Project description and goals...",
+  groupUuid: "<optional-group-uuid>"  // from chorus_get_project_groups()
 })
+```
+
+### Manage Project Groups
+
+Create, update, or delete project groups to organize related projects:
+
+```
+// List existing groups
+chorus_get_project_groups()
+
+// Create a new group
+chorus_admin_create_project_group({ name: "Mobile Apps", description: "All mobile application projects" })
+
+// Move a project into a group
+chorus_admin_move_project_to_group({ projectUuid: "<project-uuid>", groupUuid: "<group-uuid>" })
+
+// Ungroup a project
+chorus_admin_move_project_to_group({ projectUuid: "<project-uuid>", groupUuid: null })
 ```
 
 ### Create Ideas

@@ -291,6 +291,83 @@ Each task in the response includes the full TaskResponse format (with dependsOn,
 
 ---
 
+### chorus_get_project_groups
+
+**Description**: List all project groups for the current company. Returns groups with project counts.
+
+**Input**: None
+
+**Output**:
+```json
+{
+  "groups": [
+    {
+      "uuid": "Group UUID",
+      "name": "Group name",
+      "description": "...",
+      "projectCount": 3,
+      "createdAt": "ISO timestamp",
+      "updatedAt": "ISO timestamp"
+    }
+  ],
+  "total": 1
+}
+```
+
+### chorus_get_project_group
+
+**Description**: Get a single project group by UUID with its projects list.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| groupUuid | string | Yes | Project Group UUID |
+
+**Output**:
+```json
+{
+  "uuid": "Group UUID",
+  "name": "Group name",
+  "description": "...",
+  "projectCount": 2,
+  "projects": [
+    { "uuid": "...", "name": "Project A", "description": "..." }
+  ],
+  "createdAt": "ISO timestamp",
+  "updatedAt": "ISO timestamp"
+}
+```
+
+### chorus_get_group_dashboard
+
+**Description**: Get aggregated dashboard stats for a project group (project count, tasks, completion rate, ideas, proposals, activity stream).
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| groupUuid | string | Yes | Project Group UUID |
+
+**Output**:
+```json
+{
+  "group": { "uuid": "...", "name": "...", "description": "..." },
+  "stats": {
+    "projectCount": 3,
+    "totalTasks": 15,
+    "completedTasks": 8,
+    "completionRate": 53,
+    "openIdeas": 4,
+    "activeProposals": 2
+  },
+  "projects": [
+    { "uuid": "...", "name": "...", "taskCount": 5, "completionRate": 60 }
+  ],
+  "recentActivity": [...]
+}
+```
+
+---
+
 ### chorus_add_comment
 
 **Description**: Add a comment to an Idea/Proposal/Task/Document
@@ -994,6 +1071,61 @@ Therefore, after approval there is **no need** to manually call `chorus_pm_creat
 | documentUuid | string | Yes | Document UUID |
 
 **Output**: Confirmation message
+
+### chorus_admin_create_project_group
+
+**Description**: Create a new project group (Admin exclusive)
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | string | Yes | Project group name |
+| description | string | No | Project group description |
+
+**Output**: Created Project Group JSON (includes uuid, name, description, projectCount, createdAt, updatedAt)
+
+### chorus_admin_update_project_group
+
+**Description**: Update a project group (Admin exclusive)
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| groupUuid | string | Yes | Project Group UUID |
+| name | string | No | New group name |
+| description | string | No | New group description |
+
+**Output**: Updated Project Group JSON
+
+### chorus_admin_delete_project_group
+
+**Description**: Delete a project group (Admin exclusive). Projects in the group become ungrouped.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| groupUuid | string | Yes | Project Group UUID |
+
+**Output**: Confirmation message
+
+### chorus_admin_move_project_to_group
+
+**Description**: Move a project to a different group or ungroup it (Admin exclusive). Set groupUuid to null to ungroup.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| projectUuid | string | Yes | Project UUID |
+| groupUuid | string\|null | Yes | Target Project Group UUID (null to ungroup) |
+
+**Output**:
+```json
+{
+  "uuid": "Project UUID",
+  "name": "Project name",
+  "groupUuid": "Group UUID or null"
+}
+```
 
 ---
 

@@ -2,7 +2,7 @@
 # on-session-start.sh — SessionStart hook
 # Triggered on Claude Code session startup/resume.
 # Calls chorus_checkin via MCP to inject agent context.
-# Also scans for pre-created session files (Plan A: sub-agent self-discovery).
+# Also scans for existing session files (metadata for hook state lookup).
 #
 # Output: JSON with systemMessage (user) + additionalContext (Claude)
 
@@ -48,18 +48,21 @@ ${CHECKIN_RESULT}
 ## Session Management — IMPORTANT
 
 The Chorus Plugin **fully automates** Chorus session lifecycle:
-- Sub-agent spawn → Chorus session auto-created (or reused) + session file written to .chorus/sessions/<name>.json
+- Sub-agent spawn → Chorus session auto-created (or reused) + session UUID and workflow auto-injected into sub-agent context
 - Teammate idle → Chorus session heartbeat (automatic)
 - Sub-agent stop → auto checkout all tasks + Chorus session closed
 
 **Do NOT call chorus_create_session or chorus_close_session for sub-agents.** The plugin handles this.
-When spawning sub-agents, pass Chorus TASK UUIDs in the prompt — NOT session UUIDs.
-Sub-agents discover their session UUID by reading .chorus/sessions/<their-name>.json.
+When spawning sub-agents, just pass Chorus TASK UUIDs in the prompt. Session UUID + workflow are auto-injected by SubagentStart hook.
 
 For your own session (if you are a Developer agent working directly, not via sub-agents):
 call chorus_list_sessions() first, then reopen or create as needed.
 
-To link a Claude Code task to a Chorus task, include \`chorus:task:<uuid>\` in the task description."
+To link a Claude Code task to a Chorus task, include \`chorus:task:<uuid>\` in the task description.
+
+## Project Groups
+
+Projects are organized into Project Groups. Before creating a new project, call \`chorus_get_project_groups()\` to see existing groups and pass the \`groupUuid\` to \`chorus_admin_create_project()\` to assign the project to the correct group. Creating a project without specifying a group puts it in Ungrouped."
 
 # Check for existing state (resumed session)
 MAIN_SESSION=$("$API" state-get "main_session_uuid" 2>/dev/null) || true

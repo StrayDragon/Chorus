@@ -93,7 +93,7 @@ chorus_get_task({ taskUuid: "<task-B-uuid>" })
 
 ### Phase 2: Team Lead — Create Claude Code Team & Spawn Sub-Agents
 
-The plugin auto-creates a session file at `.chorus/sessions/<name>.json` for each sub-agent. This file contains the session UUID **and** a complete `workflow` field with step-by-step Chorus instructions and pre-filled MCP call examples. The Team Lead only needs to pass the Chorus task UUID(s) and tell the sub-agent to read its session file.
+The plugin auto-injects session UUID and workflow instructions directly into each sub-agent's context via the SubagentStart hook. The Team Lead only needs to pass the Chorus task UUID(s) — no session files, no workflow boilerplate.
 
 ```python
 # 1. Create a Claude Code team
@@ -103,7 +103,7 @@ TeamCreate({ team_name: "feature-x", description: "Implementing feature X" })
 TaskCreate({ subject: "Frontend: build user form", description: "chorus:task:<task-A-uuid>" })
 TaskCreate({ subject: "Backend: create API endpoints", description: "chorus:task:<task-B-uuid>" })
 
-# 3. Spawn sub-agents — minimal prompt, workflow is in the session file
+# 3. Spawn sub-agents — just pass task UUIDs, plugin injects session workflow automatically
 Task({
   subagent_type: "general-purpose",
   team_name: "feature-x",
@@ -112,11 +112,7 @@ Task({
     Your Chorus task UUID: task-A-uuid
     Project UUID: project-uuid
 
-    FIRST: Read .chorus/sessions/frontend-worker.json — it contains your
-    session UUID and a 'workflow' field with step-by-step Chorus instructions.
-    Follow those steps before and after coding.
-
-    Then implement the frontend user form component...
+    Implement the frontend user form component...
   """
 })
 
@@ -128,30 +124,23 @@ Task({
     Your Chorus task UUID: task-B-uuid
     Project UUID: project-uuid
 
-    FIRST: Read .chorus/sessions/backend-worker.json — it contains your
-    session UUID and a 'workflow' field with step-by-step Chorus instructions.
-    Follow those steps before and after coding.
-
-    Then implement the backend API endpoints...
+    Implement the backend API endpoints...
   """
 })
 ```
 
 **What the Team Lead prompt needs:**
 - **Task UUID(s)** — which Chorus tasks this sub-agent should work on
-- **Session file path** — tell the sub-agent to read `.chorus/sessions/<name>.json` and follow the `workflow` inside
-- **NO session UUID, NO workflow boilerplate** — the session file has everything pre-filled with the real sessionUuid
+- **NO session UUID, NO workflow boilerplate** — the plugin auto-injects everything via SubagentStart hook
 
 ### Phase 3: Sub-Agent — Execute Work
 
-Each sub-agent reads `.chorus/sessions/<name>.json` which contains both the session UUID and a `workflow` array with step-by-step instructions. The workflow field has the real sessionUuid pre-filled in every MCP call example, so the sub-agent can follow it directly.
+The plugin injects the session UUID and workflow instructions directly into the sub-agent's context via the SubagentStart hook. The sub-agent sees these as additional context when it starts.
 
 ```
-# === Session Discovery (Plugin provides the file + workflow) ===
-
-# 1. Read session file — contains sessionUuid AND workflow instructions
-#    File: .chorus/sessions/<your-name>.json
-#    Contains: { "sessionUuid": "...", "workflow": [...step-by-step instructions...] }
+# === Session Auto-Injected by Plugin (sub-agent sees this automatically) ===
+# Session UUID, workflow steps, and MCP call examples are injected into context.
+# No file reading needed.
 
 # === Chorus Setup (FIRST, before any coding) ===
 
@@ -257,9 +246,7 @@ Task({
     2. task-api-uuid — Implement API endpoints (depends on #1)
     3. task-tests-uuid — Write integration tests (depends on #2)
 
-    FIRST: Read .chorus/sessions/full-stack-worker.json and follow the workflow inside.
-
-    For EACH task, follow the workflow steps:
+    For EACH task, follow the Chorus workflow steps (auto-injected by plugin):
     checkin → in_progress → work → report → checkout → submit_for_verify
   """
 })
@@ -301,10 +288,10 @@ This keeps session history clean and makes it easier to trace work across multip
 - **Fix**: Do NOT call `chorus_create_session` when the plugin is active — let the plugin handle it
 - If duplicates already exist, close the extra sessions with `chorus_close_session`
 
-### Sub-agent can't find session file
-- The session file is at `.chorus/sessions/<name>.json` where `<name>` matches the `name` parameter in the `Task` tool call
+### Sub-agent didn't receive session instructions
+- The SubagentStart hook auto-injects session UUID and workflow into the sub-agent's context
+- If missing, check that the plugin is loaded (`/plugin list`) and `CHORUS_URL` is set
 - Ensure the `name` parameter is set when spawning (e.g., `name: "frontend-worker"`)
-- The file is created synchronously before the sub-agent starts, so it should always be available
 
 ---
 
@@ -314,9 +301,9 @@ This keeps session history clean and makes it easier to trace work across multip
 |------|-----|-----------------|-------------|
 | Plan work | Team Lead | — | `chorus_checkin`, `chorus_list_tasks` |
 | Create team | Team Lead | `TeamCreate` | — |
-| Spawn workers | Team Lead | `Task` (task UUIDs + "read session file") | — |
-| *(auto)* Create sessions + write workflow | Plugin | — | `chorus_create_session` / `chorus_reopen_session` |
-| Discover session + workflow | Sub-Agent | Read `.chorus/sessions/<name>.json` | — |
+| Spawn workers | Team Lead | `Task` (pass task UUIDs only) | — |
+| *(auto)* Create sessions + inject workflow | Plugin (SubagentStart) | — | `chorus_create_session` / `chorus_reopen_session` |
+| *(auto)* Receive session + workflow | Sub-Agent | (injected into context) | — |
 | Checkin to task | Sub-Agent | — | `chorus_session_checkin_task` |
 | Start work | Sub-Agent | — | `chorus_update_task(in_progress, sessionUuid)` |
 | Report progress | Sub-Agent | — | `chorus_report_work(sessionUuid)` |

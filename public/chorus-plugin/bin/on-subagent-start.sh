@@ -11,8 +11,9 @@
 #   3. If it exists but is closed → reopen
 #   4. If not found → create new
 #
-# Writes a per-agent session file for sub-agent self-discovery (Plan A).
-# Output: JSON with systemMessage (user) + additionalContext (Claude)
+# Writes minimal session metadata file for other hooks (TeammateIdle, SubagentStop).
+# Injects session UUID + workflow directly into sub-agent context via additionalContext.
+# Output: JSON with systemMessage (user) + additionalContext (sub-agent)
 
 set -euo pipefail
 
@@ -176,10 +177,7 @@ fi
 "$API" state-set "session_${SESSION_NAME}" "$SESSION_UUID"
 "$API" state-set "name_for_agent_${AGENT_ID}" "$SESSION_NAME"
 
-# === Session file: write for sub-agent self-discovery (Plan A) ===
-# The session file doubles as a PE injection point — sub-agents are instructed
-# to read this file, so the "workflow" field gives them the complete Chorus
-# workflow guide with concrete MCP call examples using their REAL sessionUuid.
+# === Session file: minimal metadata for other hooks (TeammateIdle, SubagentStop) ===
 SESSIONS_DIR="${CLAUDE_PROJECT_DIR:-.}/.chorus/sessions"
 mkdir -p "$SESSIONS_DIR"
 
@@ -189,53 +187,34 @@ cat > "${SESSIONS_DIR}/${SESSION_NAME}.json" <<SESSIONEOF
   "agentId": "${AGENT_ID}",
   "agentName": "${SESSION_NAME}",
   "agentType": "${AGENT_TYPE:-unknown}",
-  "chorusUrl": "${CHORUS_URL}",
   "sessionAction": "${SESSION_ACTION}",
-  "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "workflow": [
-    "=== Chorus Workflow — FOLLOW THESE STEPS ===",
-    "",
-    "Your Chorus session UUID is: ${SESSION_UUID}",
-    "Your session name is: ${SESSION_NAME}",
-    "The Chorus Plugin manages your session lifecycle automatically (heartbeat, close).",
-    "Do NOT call chorus_create_session or chorus_close_session yourself.",
-    "",
-    "--- BEFORE starting work on a task ---",
-    "",
-    "1. Check in your session to the task (makes you visible in the Chorus UI):",
-    "   chorus_session_checkin_task({ sessionUuid: \"${SESSION_UUID}\", taskUuid: \"<TASK_UUID>\" })",
-    "",
-    "2. Move the task to in_progress:",
-    "   chorus_update_task({ taskUuid: \"<TASK_UUID>\", status: \"in_progress\", sessionUuid: \"${SESSION_UUID}\" })",
-    "",
-    "--- WHILE working ---",
-    "",
-    "3. Report progress periodically (after meaningful milestones):",
-    "   chorus_report_work({ taskUuid: \"<TASK_UUID>\", report: \"Completed X. Files changed: ...\", sessionUuid: \"${SESSION_UUID}\" })",
-    "",
-    "--- AFTER completing the task ---",
-    "",
-    "4. Check out your session from the task:",
-    "   chorus_session_checkout_task({ sessionUuid: \"${SESSION_UUID}\", taskUuid: \"<TASK_UUID>\" })",
-    "",
-    "5. Submit for human verification:",
-    "   chorus_submit_for_verify({ taskUuid: \"<TASK_UUID>\", summary: \"What was done, files changed, test results.\" })",
-    "",
-    "Replace <TASK_UUID> with the actual Chorus task UUID provided in your prompt."
-  ]
+  "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 SESSIONEOF
 
-# === Output ===
+# === Output: inject workflow directly into sub-agent context via additionalContext ===
+WORKFLOW="## Chorus Session (Auto-injected by plugin)
+
+Your Chorus session UUID is: ${SESSION_UUID}
+Your session name is: ${SESSION_NAME}
+The plugin manages session lifecycle (heartbeat, close). Do NOT call chorus_create_session or chorus_close_session.
+
+### Workflow — follow these steps for each task:
+
+**Before starting:**
+1. Check in: chorus_session_checkin_task({ sessionUuid: \"${SESSION_UUID}\", taskUuid: \"<TASK_UUID>\" })
+2. Start work: chorus_update_task({ taskUuid: \"<TASK_UUID>\", status: \"in_progress\", sessionUuid: \"${SESSION_UUID}\" })
+
+**While working:**
+3. Report progress: chorus_report_work({ taskUuid: \"<TASK_UUID>\", report: \"...\", sessionUuid: \"${SESSION_UUID}\" })
+
+**After completing:**
+4. Check out: chorus_session_checkout_task({ sessionUuid: \"${SESSION_UUID}\", taskUuid: \"<TASK_UUID>\" })
+5. Submit: chorus_submit_for_verify({ taskUuid: \"<TASK_UUID>\", summary: \"...\" })
+
+Replace <TASK_UUID> with the actual Chorus task UUID from your prompt."
+
 "$API" hook-output \
   "Chorus session ${SESSION_ACTION}: '${SESSION_NAME}' (${SESSION_UUID:0:8}...)" \
-  "Chorus session ${SESSION_ACTION} for sub-agent '${SESSION_NAME}':
-  Session UUID: ${SESSION_UUID}
-  Session file: .chorus/sessions/${SESSION_NAME}.json (includes workflow instructions)
-
-The session file now contains a 'workflow' field with complete Chorus instructions and MCP call examples pre-filled with the sub-agent's real sessionUuid. When the sub-agent reads this file, it gets everything it needs — no boilerplate required in the spawn prompt.
-
-Team Lead only needs to include Chorus task UUID(s) in the sub-agent prompt. Example:
-  Your Chorus task UUID: <task-uuid>
-  Read .chorus/sessions/${SESSION_NAME}.json and follow the workflow instructions inside." \
+  "$WORKFLOW" \
   "SubagentStart"

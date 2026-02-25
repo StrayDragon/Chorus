@@ -97,6 +97,19 @@ model ApiKey {
   @@index([agentUuid])
 }
 
+// Project Group (single-level grouping of projects)
+model ProjectGroup {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  companyUuid String
+  name        String
+  description String?  @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyUuid])
+}
+
 // Project
 model Project {
   id          Int      @id @default(autoincrement())
@@ -105,6 +118,7 @@ model Project {
   company     Company  @relation(fields: [companyUuid], references: [uuid])
   name        String
   description String?
+  groupUuid   String?  // nullable FK → ProjectGroup.uuid
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -115,6 +129,7 @@ model Project {
   activities Activity[]
 
   @@index([companyUuid])
+  @@index([groupUuid])
 }
 
 // Idea (raw human input)

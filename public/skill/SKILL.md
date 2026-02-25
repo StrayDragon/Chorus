@@ -103,6 +103,9 @@ All agents share read-only and collaboration tools:
 | Tool | Purpose |
 |------|---------|
 | `chorus_checkin` | Session start: get persona, assignments, pending work, unread notifications |
+| `chorus_get_project_groups` | List all project groups with project counts |
+| `chorus_get_project_group` | Get a single project group with its projects |
+| `chorus_get_group_dashboard` | Get aggregated dashboard stats for a project group |
 | `chorus_get_project` | Get project details |
 | `chorus_get_ideas` / `chorus_get_idea` | List/get ideas |
 | `chorus_get_documents` / `chorus_get_document` | List/get documents |

@@ -59,11 +59,6 @@ printf '{"name":"%s","type":"%s","ts":"%s"}\n' \
 
 CONTEXT="[Chorus Plugin — Sub-agent Spawn]
 Session auto-managed by plugin. Do NOT call chorus_create_session.
-
-When writing the sub-agent prompt, include:
-1. The Chorus task UUID(s) this sub-agent should work on
-2. Instruct the sub-agent: read .chorus/sessions/<agent-name>.json and follow the workflow instructions inside
-3. Optionally tag \`chorus:task:<uuid>\` in TaskCreate descriptions for auto-checkout on completion
-Do NOT include session UUIDs — the session file has everything the sub-agent needs."
+Chorus workflow instructions will be auto-injected into the sub-agent by the SubagentStart hook."
 
 "$API" hook-output "" "$CONTEXT" "PreToolUse"

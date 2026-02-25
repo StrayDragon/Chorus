@@ -37,8 +37,7 @@ fi
 CONTEXT="[Chorus Plugin Active]
 - Sub-agent sessions are auto-managed by hooks (create/reuse/heartbeat/close).
 - Do NOT call chorus_create_session or chorus_close_session for sub-agents — the plugin handles this.
-- When spawning sub-agents: pass Chorus task UUIDs, NOT session UUIDs.
-- Sub-agents: read .chorus/sessions/<your-name>.json for your session UUID.
+- When spawning sub-agents: just pass Chorus task UUIDs. Session UUID + workflow are auto-injected by SubagentStart hook.
 - Link CC tasks to Chorus tasks with \`chorus:task:<uuid>\` in description."
 
 if [ "$SESSION_COUNT" -gt 0 ]; then

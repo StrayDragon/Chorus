@@ -64,7 +64,8 @@ export default function DashboardLayout({
   const isGlobalPage =
     pathname === "/projects" ||
     pathname === "/projects/new" ||
-    pathname === "/settings";
+    pathname === "/settings" ||
+    pathname.startsWith("/project-groups");
   const isProjectContext = currentProjectUuid && !isGlobalPage;
 
   useEffect(() => {

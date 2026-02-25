@@ -59,6 +59,9 @@ All agents share read-only and collaboration tools:
 | Tool | Purpose |
 |------|---------|
 | `chorus_checkin` | Session start: get persona, assignments, pending work, unread notifications |
+| `chorus_get_project_groups` | List all project groups with project counts |
+| `chorus_get_project_group` | Get a single project group with its projects |
+| `chorus_get_group_dashboard` | Get aggregated dashboard stats for a project group |
 | `chorus_get_project` | Get project details |
 | `chorus_get_ideas` / `chorus_get_idea` | List/get ideas |
 | `chorus_get_documents` / `chorus_get_document` | List/get documents |
@@ -79,7 +82,7 @@ All agents share read-only and collaboration tools:
 | `chorus_list_sessions` | List your sessions |
 | `chorus_close_session` | Close a session |
 | `chorus_reopen_session` | Reopen a closed session |
-| `chorus_session_checkin_task` | Checkin to a task (REQUIRED before starting work — sub-agents get sessionUuid from `.chorus/sessions/<name>.json`) |
+| `chorus_session_checkin_task` | Checkin to a task (REQUIRED before starting work — sub-agents receive sessionUuid via auto-injection) |
 | `chorus_session_checkout_task` | Checkout from a task when work is done |
 
 ### Session & Observability
@@ -97,7 +100,7 @@ See **[references/05-session-sub-agent.md](references/05-session-sub-agent.md)**
 
 ### Claude Code Agent Teams (Swarm Mode)
 
-When using Claude Code's Agent Teams to run multiple sub-agents in parallel, Chorus provides full work observability. Session lifecycle is **fully automated** by the Chorus Plugin — sessions are created/reused on sub-agent spawn, heartbeats sent on idle, and sessions closed on sub-agent exit. The Team Lead does NOT create sessions manually; sub-agents discover their session UUID from `.chorus/sessions/<name>.json`.
+When using Claude Code's Agent Teams to run multiple sub-agents in parallel, Chorus provides full work observability. Session lifecycle is **fully automated** by the Chorus Plugin — sessions are created/reused on sub-agent spawn, heartbeats sent on idle, and sessions closed on sub-agent exit. The Team Lead does NOT create sessions manually; the plugin injects session UUID and workflow instructions directly into each sub-agent's context via the SubagentStart hook.
 
 Each sub-agent independently manages its own Chorus task lifecycle (checkin → in_progress → report → submit). See **[references/06-claude-code-agent-teams.md](references/06-claude-code-agent-teams.md)** for the complete integration guide.
 

@@ -33,6 +33,18 @@ All Agent roles can use the following tools for querying information and collabo
 
 ---
 
+## Project Groups
+
+Projects can be organized into **Project Groups** — a single-level grouping for categorizing related projects together (e.g., all projects for the same product). A project belongs to at most one group, or can be ungrouped.
+
+| Tool | Purpose |
+|------|---------|
+| `chorus_get_project_groups` | List all project groups with project counts |
+| `chorus_get_project_group` | Get a single project group by UUID with its projects list |
+| `chorus_get_group_dashboard` | Get aggregated dashboard stats for a project group |
+
+---
+
 ## Project & Activity
 
 | Tool | Purpose |

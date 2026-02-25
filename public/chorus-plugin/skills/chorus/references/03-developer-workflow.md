@@ -43,13 +43,7 @@ Review your persona, current assignments, and pending work counts. The checkin r
 **MANDATORY.** You need a session before starting any work. How you get it depends on whether you are a sub-agent or a standalone agent.
 
 **If you are a sub-agent** (spawned by a Team Lead via the Task tool):
-Your session is **auto-created by the Chorus Plugin**. Read your session file to get the UUID:
-
-```
-# Read your session file (the filename matches your agent name)
-# File: .chorus/sessions/<your-name>.json
-# Contains: { "sessionUuid": "...", "agentName": "...", ... }
-```
+Your session UUID and workflow instructions are **auto-injected into your context** by the Chorus Plugin's SubagentStart hook. Look for a "Chorus Session" section in your system reminders — it contains your session UUID and step-by-step MCP call examples.
 
 Do NOT call `chorus_create_session` — the plugin already created your session.
 

@@ -14,6 +14,7 @@ export interface ProjectCreateParams {
   companyUuid: string;
   name: string;
   description?: string | null;
+  groupUuid?: string | null;
 }
 
 export interface ProjectUpdateParams {
@@ -33,6 +34,7 @@ export async function listProjects({ companyUuid, skip, take }: ProjectListParam
         uuid: true,
         name: true,
         description: true,
+        groupUuid: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -92,13 +94,14 @@ export async function getProjectByUuid(companyUuid: string, uuid: string) {
 }
 
 // Create project
-export async function createProject({ companyUuid, name, description }: ProjectCreateParams) {
+export async function createProject({ companyUuid, name, description, groupUuid }: ProjectCreateParams) {
   return prisma.project.create({
-    data: { companyUuid, name, description },
+    data: { companyUuid, name, description, groupUuid: groupUuid ?? null },
     select: {
       uuid: true,
       name: true,
       description: true,
+      groupUuid: true,
       createdAt: true,
       updatedAt: true,
     },

@@ -39,9 +39,12 @@ Key lifecycle events:
 | `TaskCompleted` | When a Claude Code internal Task is marked complete | Team Lead |
 | `SubagentStop` | When Sub-Agent process exits | Team Lead |
 
-Note a critical fact: **all these hooks fire in the Team Lead's context**. Their output (`additionalContext`) is injected into the Team Lead's conversation, not the Sub-Agent's. A Sub-Agent's initial prompt is entirely determined by the `prompt` parameter of the Task tool — no hook can directly modify it.
+Note a critical distinction about where hook output goes:
 
-This means that if you want Sub-Agents to automatically receive certain context (such as session IDs or workflow instructions), you need to find indirect injection methods. This is the core topic of this article.
+- Most hooks (`PreToolUse:Task`, `TeammateIdle`, `TaskCompleted`, `SubagentStop`) inject `additionalContext` into the **Team Lead's** context
+- **`SubagentStart` is the exception** — its `additionalContext` is injected directly into the **Sub-Agent's** context
+
+This means `SubagentStart` is the ideal hook for automatically providing Sub-Agents with working context (session IDs, workflow instructions, etc.) without relying on the Team Lead to hand-write boilerplate or the Sub-Agent to read files. This discovery is the core insight of this article.
 
 ---
 
@@ -145,13 +148,12 @@ Task({
   name: "frontend-worker",
   prompt: """
     Your Chorus task UUID: task-A-uuid
-    Read .chorus/sessions/frontend-worker.json and follow the workflow inside.
-    Then implement the frontend user form component...
+    Implement the frontend user form component...
   """
 })
 ```
 
-From 15 lines of boilerplate to 3 lines. Everything else is handled automatically by the plugin's hooks.
+From 15 lines of boilerplate to 2 lines. The Team Lead only passes the task UUID — the plugin's `SubagentStart` hook automatically injects the session UUID and complete workflow instructions directly into the Sub-Agent's context. No session files to read, no workflow boilerplate to copy.
 
 ---
 
@@ -437,13 +439,13 @@ Chorus registers 3 `PreToolUse` hooks, each matching a different tool:
 |---------|--------|-----------------|
 | `EnterPlanMode` | [`on-pre-enter-plan.sh`](https://github.com/Chorus-AIDLC/Chorus/blob/main/public/chorus-plugin/bin/on-pre-enter-plan.sh) | Inject Chorus Proposal workflow guidance — "Create a Proposal first, set up Task dependency DAG, submit for approval before coding" |
 | `ExitPlanMode` | [`on-pre-exit-plan.sh`](https://github.com/Chorus-AIDLC/Chorus/blob/main/public/chorus-plugin/bin/on-pre-exit-plan.sh) | Reminder check — "Confirm Proposal has been created and submitted before exiting Plan Mode" |
-| `Task` | [`on-pre-spawn-agent.sh`](https://github.com/Chorus-AIDLC/Chorus/blob/main/public/chorus-plugin/bin/on-pre-spawn-agent.sh) | Capture Sub-Agent name/type to pending file; remind Team Lead via `additionalContext` to include task UUID in prompt |
+| `Task` | [`on-pre-spawn-agent.sh`](https://github.com/Chorus-AIDLC/Chorus/blob/main/public/chorus-plugin/bin/on-pre-spawn-agent.sh) | Capture Sub-Agent name/type to pending file for SubagentStart to claim |
 
 `EnterPlanMode` and `ExitPlanMode` demonstrate an interesting usage: **using hooks to guide Agents toward following a specific workflow**. When the Agent enters Plan Mode, Chorus automatically injects "create Proposal before coding" guidance; when exiting Plan Mode, it checks whether a Proposal exists. This isn't a hard block (`permissionDecision` remains `allow`), but soft guidance via `additionalContext`.
 
-**`SubagentStart` — Automatic Session Creation + PE Injection** (Core)
+**`SubagentStart` — Automatic Session Creation + Direct Context Injection** (Core)
 
-This is the Chorus plugin's most critical hook, detailed in Chapter 5. In brief: claim pending file → create/reuse Session → write session file (with workflow PE) → store state mappings.
+This is the Chorus plugin's most critical hook, detailed in Chapter 5. In brief: claim pending file → create/reuse Session → inject session UUID + workflow instructions directly into Sub-Agent's context via `additionalContext` → store state mappings. The session file is kept minimal (just metadata for other hooks).
 
 **`SubagentStop` — Automatic Cleanup + Task Discovery**
 
@@ -474,16 +476,16 @@ Team Lead calls Task tool to spawn Sub-Agent
   │
   ├─ [PreToolUse:Task] on-pre-spawn-agent.sh
   │    Write .chorus/pending/<name> file (capture agent name)
-  │    Inject reminder to Team Lead: "Include task UUID in the prompt"
   │
   ├─ [SubagentStart] on-subagent-start.sh    ← Core
   │    Claim pending file (atomic mv, handles concurrency)
   │    Create/reuse/reopen Chorus Session (MCP call)
-  │    Write .chorus/sessions/<name>.json (with workflow PE)
+  │    Inject session UUID + workflow into Sub-Agent via additionalContext
+  │    Write minimal session file (metadata for other hooks)
   │    Store state mappings (agent_id ↔ session_uuid)
   │
   ├─ Sub-Agent starts executing
-  │    Read .chorus/sessions/<name>.json → get sessionUuid + workflow instructions
+  │    Session UUID + workflow already in context (auto-injected)
   │    Autonomously execute: checkin → in_progress → report → checkout → submit
   │
   ├─ [TeammateIdle] on-teammate-idle.sh (async)
@@ -507,7 +509,7 @@ We've mentioned "shared filesystem" multiple times — let's expand on this. The
 .chorus/                              # Plugin runtime state (gitignored)
 ├── state.json                        # Global state KV store
 ├── state.json.lock                   # flock exclusive lock file
-├── sessions/                         # Sub-Agent session files (with workflow PE)
+├── sessions/                         # Sub-Agent session metadata (for hook state lookup)
 │   ├── frontend-worker.json
 │   ├── backend-worker.json
 │   └── test-runner.json
@@ -581,16 +583,17 @@ Timeline:
 
 `mv` is atomic on the same filesystem — only one process can successfully move a given file. This is lighter than flock, well-suited for "first come, first served" scenarios.
 
-#### `sessions/` — The Sub-Agent's Information Gateway
+#### `sessions/` — Metadata for Cross-Hook State Lookup
 
-This is the only part visible to Sub-Agents. Each session file is both data (sessionUuid) and instructions (workflow PE). The filename is the agent name — a Sub-Agent just needs to `Read .chorus/sessions/<my-name>.json` to get everything.
+Session files now contain only minimal metadata (sessionUuid, agentId, agentName). Workflow instructions are injected directly into the Sub-Agent's context via `SubagentStart`'s `additionalContext` — Sub-Agents no longer need to read these files. The files still serve a purpose: other hooks (`TeammateIdle`, `SubagentStop`) use them to look up session information for heartbeats and cleanup.
 
 #### Lifecycle: Creation to Cleanup
 
 ```
 SessionStart  → mkdir -p .chorus/ (if not exists)
 PreToolUse    → write .chorus/pending/<name>
-SubagentStart → mv pending → claimed, write sessions/<name>.json, update state.json
+SubagentStart → mv pending → claimed, write sessions/<name>.json (metadata only),
+                inject workflow via additionalContext → Sub-Agent, update state.json
 TeammateIdle  → read state.json (lookup session_uuid), no writes
 TaskCompleted → read state.json (lookup session_uuid), no writes
 SubagentStop  → delete sessions/<name>.json, delete claimed/<agent_id>, clean state.json entries
@@ -601,54 +604,56 @@ The entire directory's lifecycle matches the Claude Code session — created at 
 
 ### 5.3 The Core Challenge: Sub-Agent Context Injection
 
-As mentioned earlier, all hook output is only injected into the Team Lead's context. So how do you get necessary information to Sub-Agents?
+The key question is: how do you automatically provide each Sub-Agent with its session UUID and workflow instructions, without the Team Lead hand-writing boilerplate?
 
-The Chorus plugin's answer: **use the shared filesystem as an information channel**.
-
-Sub-Agents don't share a context window with the Team Lead, but they share the same filesystem. And the Team Lead's spawn prompt will always tell the Sub-Agent to read a certain file — that file becomes the natural entry point for context injection.
-
-#### Implementation: Workflow PE Embedded in Session File
-
-The [`SubagentStart` hook](https://github.com/Chorus-AIDLC/Chorus/blob/main/public/chorus-plugin/bin/on-subagent-start.sh), when writing the session file, includes a `workflow` array in addition to data fields like sessionUuid — containing complete 5-step workflow instructions, with every MCP call example pre-filled with the **real sessionUuid** (Bash heredoc expands variables at write time):
+The answer lies in a critical property of the `SubagentStart` hook: **its `additionalContext` is injected directly into the Sub-Agent's context**, not the Team Lead's. This makes it the ideal injection point — the hook that creates the session (and thus knows the sessionUuid) can also inject the workflow, all in one place.
 
 ```bash
-# on-subagent-start.sh core snippet
-cat > "${SESSIONS_DIR}/${SESSION_NAME}.json" <<SESSIONEOF
-{
-  "sessionUuid": "${SESSION_UUID}",
-  "agentName": "${SESSION_NAME}",
-  "workflow": [
-    "=== Chorus Workflow — FOLLOW THESE STEPS ===",
-    "Your Chorus session UUID is: ${SESSION_UUID}",
-    "",
-    "1. Check in: chorus_session_checkin_task({ sessionUuid: \"${SESSION_UUID}\", taskUuid: \"<TASK_UUID>\" })",
-    "2. Start:    chorus_update_task({ taskUuid: \"<TASK_UUID>\", status: \"in_progress\", sessionUuid: \"${SESSION_UUID}\" })",
-    "3. Report:   chorus_report_work({ taskUuid: \"<TASK_UUID>\", report: \"...\", sessionUuid: \"${SESSION_UUID}\" })",
-    "4. Checkout:  chorus_session_checkout_task({ sessionUuid: \"${SESSION_UUID}\", taskUuid: \"<TASK_UUID>\" })",
-    "5. Submit:   chorus_submit_for_verify({ taskUuid: \"<TASK_UUID>\", summary: \"...\" })",
-    "",
-    "Replace <TASK_UUID> with the actual Chorus task UUID provided in your prompt."
-  ]
-}
-SESSIONEOF
+# on-subagent-start.sh — core snippet
+# After creating/reusing a session and obtaining SESSION_UUID...
+
+WORKFLOW="## Chorus Session (Auto-injected by plugin)
+
+Your Chorus session UUID is: ${SESSION_UUID}
+Your session name is: ${SESSION_NAME}
+Do NOT call chorus_create_session or chorus_close_session.
+
+### Workflow — follow these steps for each task:
+
+**Before starting:**
+1. Check in: chorus_session_checkin_task({ sessionUuid: \"${SESSION_UUID}\", taskUuid: \"<TASK_UUID>\" })
+2. Start work: chorus_update_task({ taskUuid: \"<TASK_UUID>\", status: \"in_progress\", sessionUuid: \"${SESSION_UUID}\" })
+
+**While working:**
+3. Report progress: chorus_report_work({ taskUuid: \"<TASK_UUID>\", report: \"...\", sessionUuid: \"${SESSION_UUID}\" })
+
+**After completing:**
+4. Check out: chorus_session_checkout_task({ sessionUuid: \"${SESSION_UUID}\", taskUuid: \"<TASK_UUID>\" })
+5. Submit: chorus_submit_for_verify({ taskUuid: \"<TASK_UUID>\", summary: \"...\" })
+
+Replace <TASK_UUID> with the actual Chorus task UUID from your prompt."
+
+"$API" hook-output \
+  "Chorus session ${SESSION_ACTION}: '${SESSION_NAME}'" \
+  "$WORKFLOW" \
+  "SubagentStart"
 ```
 
-After reading this file, the Sub-Agent has both data (sessionUuid) and instructions (workflow). It just needs to replace `<TASK_UUID>` with the value the Team Lead provided in the prompt, and can follow the steps directly.
+The Sub-Agent sees the workflow as a `<system-reminder>` in its context from the very first turn. The session file is kept minimal (just sessionUuid + metadata) for other hooks to use.
 
-This means the Team Lead's spawn prompt only needs:
+This means the Team Lead's spawn prompt is truly minimal:
 
 ```python
 Task({
   name: "frontend-worker",
   prompt: """
     Your Chorus task UUID: task-A-uuid
-    Read .chorus/sessions/frontend-worker.json and follow the workflow inside.
-    Then implement the frontend user form component...
+    Implement the frontend user form component...
   """
 })
 ```
 
-The `${SESSION_UUID}` in the Bash heredoc is expanded to the real value when the file is written.
+The plugin handles everything else — the Team Lead only passes the task UUID.
 
 ### 5.4 Session Reuse: Avoiding Duplicate Creation
 
@@ -699,18 +704,18 @@ Output is silenced with `suppressOutput: true` — heartbeats are too frequent t
 
 From the Chorus plugin's practice, we can extract several reusable design patterns:
 
-### Pattern 1: Filesystem as Sub-Agent Communication Channel
+### Pattern 1: SubagentStart for Direct Context Injection
 
 ```
-Hook writes file  →  Sub-Agent reads file
-(Team Lead context)    (Sub-Agent context)
+SubagentStart hook  →  additionalContext  →  Sub-Agent's context
+(has session data)      (direct injection)    (sees it immediately)
 ```
 
-This is currently the only reliable way to inject context into Sub-Agents. Applicable to any scenario requiring dynamic information to be passed to Sub-Agents at spawn time.
+`SubagentStart`'s `additionalContext` is the most reliable way to inject context into Sub-Agents. It fires synchronously at spawn time, has access to all session data, and injects directly into the Sub-Agent — no file reading, no prompt manipulation, no Team Lead involvement required.
 
-### Pattern 2: Embed PE in Data Files
+### Pattern 2: Filesystem for Cross-Hook State (Not Sub-Agent Communication)
 
-Don't separate data and instructions — put workflow instructions directly in the data file that Sub-Agents must read. The Sub-Agent gets both data and an operations guide in one read.
+The shared filesystem (`.chorus/` directory) is valuable for **hook-to-hook** state passing (e.g., `pending/` files relay agent names from `PreToolUse` to `SubagentStart`), but should not be the primary mechanism for Sub-Agent context injection. Use `SubagentStart`'s `additionalContext` for that instead.
 
 ### Pattern 3: PreToolUse Captures + SubagentStart Executes
 
@@ -807,6 +812,6 @@ Create `.claude-plugin/marketplace.json`:
 
 Claude Code's plugin system provides a complete extension mechanism — from Marketplace distribution, to MCP tool integration, to Hooks lifecycle management, to Skills knowledge injection. The introduction of Agent Teams (Swarm mode) makes multi-agent collaboration possible, and plugins make that collaboration manageable and observable.
 
-The Chorus plugin's practice demonstrates that even facing limitations like "hook output cannot be directly injected into Sub-Agent prompts," elegant automated workflows can still be achieved by leveraging the shared filesystem and PE injection techniques.
+The Chorus plugin's practice demonstrates that `SubagentStart`'s `additionalContext` — which injects directly into the Sub-Agent's context — is the key to seamless multi-agent workflow automation. Combined with the shared filesystem for cross-hook state management and `PreToolUse` for capturing spawn-time metadata, a fully automated session lifecycle can be achieved with zero boilerplate in the Team Lead's prompts.
 
 If you're interested in Chorus, visit [GitHub](https://github.com/Chorus-AIDLC/chorus) to learn more. If you're building your own Claude Code plugin, we hope this article's experience helps you avoid some pitfalls.
