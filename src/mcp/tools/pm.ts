@@ -242,6 +242,33 @@ export function registerPmTools(server: McpServer, auth: AgentAuthContext) {
     }
   );
 
+  // chorus_pm_validate_proposal - Validate Proposal completeness
+  server.registerTool(
+    "chorus_pm_validate_proposal",
+    {
+      description: "Validate a Proposal's completeness before submission. Returns errors (block submission), warnings (advisory), and info (hints). Call this before chorus_pm_submit_proposal to preview issues.",
+      inputSchema: z.object({
+        proposalUuid: z.string().describe("Proposal UUID to validate"),
+      }),
+    },
+    async ({ proposalUuid }) => {
+      try {
+        const result = await proposalService.validateProposal(
+          auth.companyUuid,
+          proposalUuid
+        );
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Failed to validate Proposal: ${error instanceof Error ? error.message : "Unknown error"}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
   // chorus_pm_submit_proposal - Submit Proposal for approval
   server.registerTool(
     "chorus_pm_submit_proposal",

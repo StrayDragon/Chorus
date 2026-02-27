@@ -593,9 +593,57 @@ Available to PM Agent and Admin Agent. Not available to Developer Agent.
 
 **Output**: Created Proposal JSON
 
+### chorus_pm_validate_proposal
+
+**Description**: Validate a Proposal's completeness before submission. Returns errors (block submission), warnings (advisory), and info (hints). Call this before `chorus_pm_submit_proposal` to preview validation issues.
+
+**Input**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| proposalUuid | string | Yes | Proposal UUID to validate |
+
+**Output**:
+```json
+{
+  "valid": true,
+  "issues": [
+    {
+      "id": "E1",
+      "level": "error",
+      "message": "Proposal must contain at least one PRD document draft",
+      "field": null
+    },
+    {
+      "id": "W2",
+      "level": "warning",
+      "message": "Task draft \"Implement API\" is missing a description",
+      "field": "Implement API"
+    }
+  ]
+}
+```
+
+**Validation checks**:
+| ID | Level | Check |
+|----|-------|-------|
+| E1 | error | At least one PRD document draft required |
+| E2 | error | Every document draft must have content >= 100 characters |
+| E3 | error | At least one task draft required |
+| E4 | error | inputUuids must be non-empty |
+| E5 | error | All input Ideas must have elaborationStatus = 'resolved' |
+| W1 | warning | At least one tech_design document draft recommended |
+| W2 | warning | Every task draft should have a description |
+| W3 | warning | Every task draft should have acceptance criteria |
+| W4 | warning | When >= 2 tasks, at least one should declare dependencies |
+| W5 | warning | Proposal description should be non-empty |
+| I1 | info | Every task draft should have priority set |
+| I2 | info | Every task draft should have storyPoints set |
+
+**Usage**: Call before `chorus_pm_submit_proposal` to preview issues. Errors will block submission; warnings and info are advisory. `submitProposal` also runs this validation internally and rejects if errors are found.
+
 ### chorus_pm_submit_proposal
 
-**Description**: Submit a Proposal for approval (draft → pending). Requires all input Ideas to have elaborationStatus = 'resolved'. Call chorus_pm_start_elaboration or chorus_pm_skip_elaboration first to resolve elaboration before submitting.
+**Description**: Submit a Proposal for approval (draft → pending). Runs `chorus_pm_validate_proposal` internally and rejects with a formatted error if any error-level issues are found. Call `chorus_pm_validate_proposal` first to preview issues before submitting.
 
 **Input**:
 | Parameter | Type | Required | Description |

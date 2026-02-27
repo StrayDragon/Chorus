@@ -29,6 +29,7 @@ import { ProposalActions } from "./proposal-actions";
 import { ProposalEditor } from "./proposal-editor";
 import { ProposalComments } from "./proposal-comments";
 import { SourceIdeasCard } from "./source-ideas-card";
+import { ProposalValidationChecklist } from "./proposal-validation-checklist";
 
 // Status color configuration
 const statusColors: Record<string, string> = {
@@ -188,6 +189,15 @@ export default async function ProposalDetailPage({ params }: PageProps) {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Validation Checklist (draft only) */}
+          {proposal.status === "draft" && (
+            <ProposalValidationChecklist
+              projectUuid={projectUuid}
+              proposalUuid={proposalUuid}
+              status={proposal.status}
+            />
           )}
 
           {/* Editable Document and Task Drafts */}

@@ -18,7 +18,8 @@ PM Agent is responsible for **analyzing Ideas, producing Proposals (with PRD doc
 
 **Proposal Management:**
 - `chorus_pm_create_proposal` - Create proposal container with document & task drafts
-- `chorus_pm_submit_proposal` - Submit proposal for Admin approval (draft -> pending)
+- `chorus_pm_validate_proposal` - Validate proposal completeness before submission (returns errors, warnings, info)
+- `chorus_pm_submit_proposal` - Submit proposal for Admin approval (draft -> pending). Runs validation internally.
 - `chorus_pm_add_document_draft` - Add document draft to proposal
 - `chorus_pm_add_task_draft` - Add task draft to proposal
 - `chorus_pm_update_document_draft` - Update document draft in proposal
@@ -350,15 +351,23 @@ chorus_pm_remove_task_draft({
 })
 ```
 
-### Step 9: Submit Proposal for Review
+### Step 9: Validate and Submit Proposal for Review
 
-When the proposal is ready:
+Before submitting, validate the proposal to preview any issues:
+
+```
+chorus_pm_validate_proposal({ proposalUuid: "<proposal-uuid>" })
+```
+
+This returns `{ valid, issues }` with error, warning, and info levels. Fix any errors before submitting. Warnings and info are advisory but worth addressing.
+
+When the proposal passes validation (no errors):
 
 ```
 chorus_pm_submit_proposal({ proposalUuid: "<proposal-uuid>" })
 ```
 
-This changes the proposal status from `draft` to `pending`. An Admin will review it.
+This changes the proposal status from `draft` to `pending`. An Admin will review it. Note: `submit` also runs validation internally and rejects if errors exist.
 
 Add a comment explaining your reasoning:
 

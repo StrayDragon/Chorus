@@ -151,6 +151,186 @@ async function formatProposalResponse(
 
 // ===== Validation Functions =====
 
+export interface ValidationIssue {
+  id: string;       // e.g. "E1", "W2"
+  level: "error" | "warning" | "info";
+  message: string;  // Human-readable English message
+  field?: string;   // Optional: which draft/field has the issue
+}
+
+export interface ValidationResult {
+  valid: boolean;           // true if no errors
+  issues: ValidationIssue[];
+}
+
+// Validate Proposal completeness before submission
+export async function validateProposal(
+  companyUuid: string,
+  proposalUuid: string
+): Promise<ValidationResult> {
+  const proposal = await prisma.proposal.findFirst({
+    where: { uuid: proposalUuid, companyUuid },
+  });
+
+  if (!proposal) {
+    throw new Error("Proposal not found");
+  }
+
+  const issues: ValidationIssue[] = [];
+  const documentDrafts = (proposal.documentDrafts as unknown as DocumentDraft[]) || [];
+  const taskDrafts = (proposal.taskDrafts as unknown as TaskDraft[]) || [];
+  const inputUuids = (proposal.inputUuids as string[]) || [];
+
+  // --- Error Level ---
+
+  // E1: Must have at least one PRD document draft
+  if (!documentDrafts.some((d) => d.type === "prd")) {
+    issues.push({
+      id: "E1",
+      level: "error",
+      message: "Proposal must contain at least one PRD document draft",
+    });
+  }
+
+  // E2: Every document draft must have content >= 100 characters
+  for (const draft of documentDrafts) {
+    if (!draft.content || draft.content.length < 100) {
+      issues.push({
+        id: "E2",
+        level: "error",
+        message: `Document draft "${draft.title}" must have content with at least 100 characters`,
+        field: draft.title,
+      });
+    }
+  }
+
+  // E3: Must have at least one task draft
+  if (taskDrafts.length === 0) {
+    issues.push({
+      id: "E3",
+      level: "error",
+      message: "Proposal must contain at least one task draft",
+    });
+  }
+
+  // E4: inputUuids must be non-empty
+  if (inputUuids.length === 0) {
+    issues.push({
+      id: "E4",
+      level: "error",
+      message: "Proposal must have at least one input (idea or other source)",
+    });
+  }
+
+  // E5: All input Ideas must have elaborationStatus === "resolved"
+  if (proposal.inputType === "idea" && inputUuids.length > 0) {
+    const ideas = await prisma.idea.findMany({
+      where: { uuid: { in: inputUuids }, companyUuid },
+      select: { uuid: true, title: true, elaborationStatus: true },
+    });
+    for (const idea of ideas) {
+      if (idea.elaborationStatus !== "resolved") {
+        issues.push({
+          id: "E5",
+          level: "error",
+          message: `Input idea "${idea.title}" has unresolved elaboration (status: ${idea.elaborationStatus})`,
+          field: idea.title,
+        });
+      }
+    }
+  }
+
+  // --- Warning Level ---
+
+  // W1: Should have at least one tech_design document draft
+  if (!documentDrafts.some((d) => d.type === "tech_design")) {
+    issues.push({
+      id: "W1",
+      level: "warning",
+      message: "Proposal should contain at least one tech design document draft",
+    });
+  }
+
+  // W2: Every task draft should have a non-empty description
+  for (const draft of taskDrafts) {
+    if (!draft.description || draft.description.trim().length === 0) {
+      issues.push({
+        id: "W2",
+        level: "warning",
+        message: `Task draft "${draft.title}" is missing a description`,
+        field: draft.title,
+      });
+    }
+  }
+
+  // W3: Every task draft should have non-empty acceptanceCriteria
+  for (const draft of taskDrafts) {
+    if (!draft.acceptanceCriteria || draft.acceptanceCriteria.trim().length === 0) {
+      issues.push({
+        id: "W3",
+        level: "warning",
+        message: `Task draft "${draft.title}" is missing acceptance criteria`,
+        field: draft.title,
+      });
+    }
+  }
+
+  // W4: When >= 2 task drafts, at least one should have dependsOnDraftUuids
+  if (taskDrafts.length >= 2) {
+    const hasDeps = taskDrafts.some(
+      (d) => d.dependsOnDraftUuids && d.dependsOnDraftUuids.length > 0
+    );
+    if (!hasDeps) {
+      issues.push({
+        id: "W4",
+        level: "warning",
+        message: "When there are multiple tasks, at least one should declare dependencies",
+      });
+    }
+  }
+
+  // W5: Proposal description should be non-empty
+  if (!proposal.description || proposal.description.trim().length === 0) {
+    issues.push({
+      id: "W5",
+      level: "warning",
+      message: "Proposal description should not be empty",
+    });
+  }
+
+  // --- Info Level ---
+
+  // I1: Every task draft should have priority set
+  for (const draft of taskDrafts) {
+    if (!draft.priority) {
+      issues.push({
+        id: "I1",
+        level: "info",
+        message: `Task draft "${draft.title}" does not have a priority set`,
+        field: draft.title,
+      });
+    }
+  }
+
+  // I2: Every task draft should have storyPoints set
+  for (const draft of taskDrafts) {
+    if (draft.storyPoints == null) {
+      issues.push({
+        id: "I2",
+        level: "info",
+        message: `Task draft "${draft.title}" does not have story points set`,
+        field: draft.title,
+      });
+    }
+  }
+
+  const hasErrors = issues.some((i) => i.level === "error");
+  return {
+    valid: !hasErrors,
+    issues,
+  };
+}
+
 // Check if Ideas are already used by other Proposals
 export async function checkIdeasAvailability(
   companyUuid: string,
@@ -551,22 +731,13 @@ export async function submitProposal(
     throw new Error("Only draft proposals can be submitted for review");
   }
 
-  // Elaboration gate: if proposal is linked to Ideas, all must have elaborationStatus = 'resolved'
-  if (proposal.inputType === "idea") {
-    const inputUuids = (proposal.inputUuids as string[]) || [];
-    if (inputUuids.length > 0) {
-      const ideas = await prisma.idea.findMany({
-        where: { uuid: { in: inputUuids }, companyUuid },
-        select: { uuid: true, title: true, elaborationStatus: true },
-      });
-      const unresolved = ideas.filter((i) => i.elaborationStatus !== "resolved");
-      if (unresolved.length > 0) {
-        const names = unresolved.map((i) => `"${i.title}"`).join(", ");
-        throw new Error(
-          `Cannot submit proposal: Idea requirements must be clarified first. Unresolved: ${names}. Call chorus_pm_start_elaboration or chorus_pm_skip_elaboration on each Idea.`
-        );
-      }
-    }
+  // Run full validation (includes elaboration gate E5 and all other checks)
+  const validation = await validateProposal(companyUuid, proposalUuid);
+  if (!validation.valid) {
+    const lines = validation.issues.map(
+      (i) => `[${i.level}] ${i.message}`
+    );
+    throw new Error(`Proposal validation failed:\n${lines.join("\n")}`);
   }
 
   const updated = await prisma.proposal.update({
