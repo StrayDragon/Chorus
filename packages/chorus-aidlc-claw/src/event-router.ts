@@ -138,63 +138,63 @@ export class ChorusEventRouter {
       }
 
       this.triggerAgent(
-        `[Chorus] Task assigned: ${n.entityTitle}. Task UUID: ${n.entityUuid}. Use chorus_get_task to see details and begin work.`,
-        { notificationUuid: n.uuid, action: "task_assigned", entityUuid: n.entityUuid }
+        `[Chorus] Task assigned: ${n.entityTitle}. Task UUID: ${n.entityUuid}, Project UUID: ${n.projectUuid}. Use chorus_get_task to see details and begin work.`,
+        { notificationUuid: n.uuid, action: "task_assigned", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
       );
     } else {
       this.triggerAgent(
-        `[Chorus] Task assigned: ${n.entityTitle}. Task UUID: ${n.entityUuid}. Use chorus_get_task to review when ready.`,
-        { notificationUuid: n.uuid, action: "task_assigned", entityUuid: n.entityUuid }
+        `[Chorus] Task assigned: ${n.entityTitle}. Task UUID: ${n.entityUuid}, Project UUID: ${n.projectUuid}. Use chorus_get_task to review when ready.`,
+        { notificationUuid: n.uuid, action: "task_assigned", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
       );
     }
   }
 
   private handleMentioned(n: NotificationDetail): void {
     this.triggerAgent(
-      `[Chorus] You were @mentioned in ${n.entityType} '${n.entityTitle}': ${n.message}`,
-      { notificationUuid: n.uuid, action: "mentioned", entityUuid: n.entityUuid }
+      `[Chorus] You were @mentioned in ${n.entityType} '${n.entityTitle}' (projectUuid: ${n.projectUuid}): ${n.message}`,
+      { notificationUuid: n.uuid, action: "mentioned", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
     );
   }
 
   private handleElaborationRequested(n: NotificationDetail): void {
     this.triggerAgent(
-      `[Chorus] Elaboration requested for idea '${n.entityTitle}'. Use chorus_get_elaboration to review questions.`,
-      { notificationUuid: n.uuid, action: "elaboration_requested", entityUuid: n.entityUuid }
+      `[Chorus] Elaboration requested for idea '${n.entityTitle}' (ideaUuid: ${n.entityUuid}, projectUuid: ${n.projectUuid}). Use chorus_get_elaboration to review questions.`,
+      { notificationUuid: n.uuid, action: "elaboration_requested", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
     );
   }
 
   private handleProposalRejected(n: NotificationDetail): void {
     this.triggerAgent(
-      `[Chorus] Proposal '${n.entityTitle}' was REJECTED. Review note: "${n.message}". ` +
+      `[Chorus] Proposal '${n.entityTitle}' was REJECTED (proposalUuid: ${n.entityUuid}, projectUuid: ${n.projectUuid}). Review note: "${n.message}". ` +
       `Use chorus_get_proposal to review the proposal, then fix issues with chorus_update_task_draft / chorus_update_document_draft. ` +
       `After fixing, call chorus_validate_proposal then chorus_submit_proposal to resubmit.`,
-      { notificationUuid: n.uuid, action: "proposal_rejected", entityUuid: n.entityUuid }
+      { notificationUuid: n.uuid, action: "proposal_rejected", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
     );
   }
 
   private handleProposalApproved(n: NotificationDetail): void {
     this.triggerAgent(
-      `[Chorus] Proposal '${n.entityTitle}' was APPROVED! Documents and tasks have been created. ` +
-      `Use chorus_get_available_tasks to see the new tasks ready for work.`,
-      { notificationUuid: n.uuid, action: "proposal_approved", entityUuid: n.entityUuid }
+      `[Chorus] Proposal '${n.entityTitle}' was APPROVED (projectUuid: ${n.projectUuid})! Documents and tasks have been created. ` +
+      `Use chorus_get_available_tasks with projectUuid: "${n.projectUuid}" to see the new tasks ready for work.`,
+      { notificationUuid: n.uuid, action: "proposal_approved", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
     );
   }
 
   private handleIdeaClaimed(n: NotificationDetail): void {
     this.triggerAgent(
-      `[Chorus] Idea '${n.entityTitle}' has been assigned to you (ideaUuid: ${n.entityUuid}). ` +
+      `[Chorus] Idea '${n.entityTitle}' has been assigned to you (ideaUuid: ${n.entityUuid}, projectUuid: ${n.projectUuid}). ` +
       `Use chorus_get_idea to review the idea, then chorus_claim_idea to start elaboration.`,
-      { notificationUuid: n.uuid, action: "idea_claimed", entityUuid: n.entityUuid }
+      { notificationUuid: n.uuid, action: "idea_claimed", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
     );
   }
 
   private handleElaborationAnswered(n: NotificationDetail): void {
     this.triggerAgent(
-      `[Chorus] Elaboration answers submitted for idea '${n.entityTitle}' (ideaUuid: ${n.entityUuid}). ` +
+      `[Chorus] Elaboration answers submitted for idea '${n.entityTitle}' (ideaUuid: ${n.entityUuid}, projectUuid: ${n.projectUuid}). ` +
       `Review the answers with chorus_get_elaboration, then either:\n` +
       `- Call chorus_validate_elaboration with empty issues [] to resolve and proceed to proposal creation\n` +
       `- Call chorus_validate_elaboration with issues + followUpQuestions for another round`,
-      { notificationUuid: n.uuid, action: "elaboration_answered", entityUuid: n.entityUuid }
+      { notificationUuid: n.uuid, action: "elaboration_answered", entityUuid: n.entityUuid, projectUuid: n.projectUuid }
     );
   }
 }
