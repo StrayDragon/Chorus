@@ -391,8 +391,10 @@ async function resolveActorType(uuid: string): Promise<string | null> {
 function buildMessage(
   notificationType: string,
   actorName: string,
-  entityTitle: string
+  entityTitle: string,
+  value?: unknown
 ): string {
+  const v = (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
   switch (notificationType) {
     case "task_assigned":
       return `${actorName} assigned you to task "${entityTitle}"`;
@@ -408,8 +410,12 @@ function buildMessage(
       return `${actorName} submitted proposal "${entityTitle}" for review`;
     case "proposal_approved":
       return `Proposal "${entityTitle}" has been approved`;
-    case "proposal_rejected":
-      return `Proposal "${entityTitle}" has been rejected`;
+    case "proposal_rejected": {
+      const note = typeof v.reviewNote === "string" ? v.reviewNote.trim() : "";
+      return note
+        ? `Proposal "${entityTitle}" has been rejected. Reason: ${note}`
+        : `Proposal "${entityTitle}" has been rejected`;
+    }
     case "idea_claimed":
       return `${actorName} claimed idea "${entityTitle}"`;
     case "comment_added":
@@ -483,7 +489,7 @@ async function handleActivity(event: ActivityEvent): Promise<void> {
     if (eligibleRecipients.length === 0) return;
 
     // Build notification params
-    const message = buildMessage(notificationType, actorName, entityTitle);
+    const message = buildMessage(notificationType, actorName, entityTitle, event.value);
 
     const notifications: NotificationCreateParams[] = eligibleRecipients.map(
       (recipient) => ({
