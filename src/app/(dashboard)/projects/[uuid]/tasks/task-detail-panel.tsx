@@ -54,6 +54,7 @@ import {
 } from "./[taskUuid]/dependency-actions";
 import { getTaskSessionsAction } from "./session-actions";
 import type { TaskSessionInfo } from "@/services/session.service";
+import { useRealtimeEntityEvent } from "@/contexts/realtime-context";
 
 interface DependencyTask {
   uuid: string;
@@ -227,6 +228,15 @@ export function TaskDetailPanel({
 
   // Active workers (sessions)
   const [activeWorkers, setActiveWorkers] = useState<TaskSessionInfo[]>([]);
+
+  // Auto-refresh comments when another user adds a comment
+  useRealtimeEntityEvent("task", task?.uuid ?? "", (event) => {
+    if (event.actorUuid === currentUserUuid) return;
+    if (!task) return;
+    getTaskCommentsAction(task.uuid).then((result) => {
+      setComments(result.comments);
+    });
+  });
 
   // Pending dependencies for create mode (stored locally until task is created)
   const [pendingDeps, setPendingDeps] = useState<DependencyTask[]>([]);

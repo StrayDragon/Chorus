@@ -11,6 +11,7 @@ export interface RealtimeEvent {
   entityType: "task" | "idea" | "proposal" | "document" | "project";
   entityUuid: string;
   action: "created" | "updated" | "deleted";
+  actorUuid?: string;
 }
 
 // Single Redis channel for all events (ElastiCache Serverless doesn't support PSUBSCRIBE)

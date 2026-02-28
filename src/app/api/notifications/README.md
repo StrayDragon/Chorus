@@ -280,6 +280,73 @@ Output: { markedCount: number } or updated notification object
 | NotificationPreferencesForm | `src/components/notification-preferences-form.tsx` | Settings page toggles, auto-save with 500ms debounce |
 | NotificationProvider | `src/contexts/notification-context.tsx` | SSE context provider, wraps dashboard layout |
 
+## Real-time Comment Updates
+
+When a comment is created on any entity (idea, task, proposal, document), the UI auto-refreshes the comment list for users currently viewing that entity — no manual refresh needed.
+
+### Flow
+
+```
+Comment created (Server Action / REST API / MCP tool)
+  │
+  ▼
+commentService.createComment()
+  │
+  ├─▶ prisma.comment.create()
+  │
+  ├─▶ eventBus.emitChange({              ← fire-and-forget SSE event
+  │     entityType: targetType,
+  │     entityUuid: targetUuid,
+  │     action: "updated",
+  │     actorUuid: authorUuid             ← enables self-filtering
+  │   })
+  │
+  ▼
+SSE /api/events → Browser EventSource → RealtimeProvider
+  │
+  ▼
+useRealtimeEntityEvent(entityType, entityUuid, callback)
+  │  • Filters events by entityType + entityUuid
+  │  • Skips if actorUuid matches current user (already optimistically updated)
+  │  • Fires immediately (no throttle/debounce)
+  ▼
+Re-fetch comments via Server Action → UI updated
+```
+
+### Affected Components
+
+| Component | Entity Type | File |
+|-----------|-------------|------|
+| Idea Detail Panel | `idea` | `src/app/(dashboard)/projects/[uuid]/ideas/idea-detail-panel.tsx` |
+| Task Detail Panel | `task` | `src/app/(dashboard)/projects/[uuid]/tasks/task-detail-panel.tsx` |
+| Proposal Comments | `proposal` | `src/app/(dashboard)/projects/[uuid]/proposals/[proposalUuid]/proposal-comments.tsx` |
+
+### RealtimeEvent Extension
+
+The `RealtimeEvent` interface (`src/lib/event-bus.ts`) includes an optional `actorUuid` field:
+
+```typescript
+interface RealtimeEvent {
+  companyUuid: string;
+  projectUuid: string;
+  entityType: "task" | "idea" | "proposal" | "document" | "project";
+  entityUuid: string;
+  action: "created" | "updated" | "deleted";
+  actorUuid?: string;  // Who triggered the event — used by frontend to skip self-events
+}
+```
+
+### useRealtimeEntityEvent Hook
+
+Exported from `src/contexts/realtime-context.tsx`. Subscribes to SSE events filtered by entity type and UUID. Entity events bypass the throttle/debounce applied to generic `useRealtimeEvent` subscribers — comments appear instantly.
+
+```typescript
+useRealtimeEntityEvent("task", task.uuid, (event) => {
+  if (event.actorUuid === currentUserUuid) return; // skip self
+  refetchComments();
+});
+```
+
 ## Key Design Decisions
 
 1. **Self-notification exclusion**: Actors never receive notifications for their own actions (both at comment level and general activity level).

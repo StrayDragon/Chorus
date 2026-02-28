@@ -13,8 +13,20 @@ import { useRouter } from "next/navigation";
 
 type Subscriber = () => void;
 
+interface RealtimeEvent {
+  companyUuid: string;
+  projectUuid: string;
+  entityType: string;
+  entityUuid: string;
+  action: string;
+  actorUuid?: string;
+}
+
+type EntitySubscriber = (event: RealtimeEvent) => void;
+
 interface RealtimeContextType {
   subscribe: (callback: Subscriber) => () => void;
+  subscribeEntity: (callback: EntitySubscriber) => () => void;
 }
 
 const RealtimeContext = createContext<RealtimeContextType | null>(null);
@@ -26,9 +38,14 @@ interface RealtimeProviderProps {
 
 export function RealtimeProvider({ projectUuid, children }: RealtimeProviderProps) {
   const subscribersRef = useRef<Set<Subscriber>>(new Set());
+  const entitySubscribersRef = useRef<Set<EntitySubscriber>>(new Set());
 
   const notify = useCallback(() => {
     subscribersRef.current.forEach((cb) => cb());
+  }, []);
+
+  const notifyEntity = useCallback((event: RealtimeEvent) => {
+    entitySubscribersRef.current.forEach((cb) => cb(event));
   }, []);
 
   useEffect(() => {
@@ -43,7 +60,15 @@ export function RealtimeProvider({ projectUuid, children }: RealtimeProviderProp
       // Close any existing connection before opening a new one
       disconnect();
       es = new EventSource(`/api/events?projectUuid=${projectUuid}`);
-      es.onmessage = () => {
+      es.onmessage = (msg) => {
+        // Parse event data for entity-specific subscribers
+        let parsedEvent: RealtimeEvent | null = null;
+        try {
+          parsedEvent = JSON.parse(msg.data);
+        } catch {
+          // Non-JSON message (e.g. heartbeat) — ignore for entity subscribers
+        }
+
         clearTimeout(debounceTimer);
         const now = Date.now();
         const elapsed = now - lastNotifyTime;
@@ -58,6 +83,11 @@ export function RealtimeProvider({ projectUuid, children }: RealtimeProviderProp
             lastNotifyTime = Date.now();
             notify();
           }, Math.max(DEBOUNCE_MS, THROTTLE_MS - elapsed));
+        }
+
+        // Entity-specific events fire immediately (no throttle/debounce)
+        if (parsedEvent) {
+          notifyEntity(parsedEvent);
         }
       };
       es.onerror = () => {
@@ -89,7 +119,7 @@ export function RealtimeProvider({ projectUuid, children }: RealtimeProviderProp
       clearTimeout(debounceTimer);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [projectUuid, notify]);
+  }, [projectUuid, notify, notifyEntity]);
 
   const subscribe = useCallback((callback: Subscriber) => {
     subscribersRef.current.add(callback);
@@ -98,8 +128,15 @@ export function RealtimeProvider({ projectUuid, children }: RealtimeProviderProp
     };
   }, []);
 
+  const subscribeEntity = useCallback((callback: EntitySubscriber) => {
+    entitySubscribersRef.current.add(callback);
+    return () => {
+      entitySubscribersRef.current.delete(callback);
+    };
+  }, []);
+
   // Memoize context value to avoid unnecessary re-renders of consumers
-  const contextValue = useMemo(() => ({ subscribe }), [subscribe]);
+  const contextValue = useMemo(() => ({ subscribe, subscribeEntity }), [subscribe, subscribeEntity]);
 
   return (
     <RealtimeContext.Provider value={contextValue}>
@@ -136,4 +173,29 @@ export function useRealtimeRefresh() {
   useRealtimeEvent(() => {
     router.refresh();
   });
+}
+
+/**
+ * Subscribe to SSE events for a specific entity. The callback fires only when
+ * events match the given entityType and entityUuid. Does NOT fire on mount.
+ * No-ops gracefully outside RealtimeProvider.
+ */
+export function useRealtimeEntityEvent(
+  entityType: string,
+  entityUuid: string,
+  callback: (event: RealtimeEvent) => void
+) {
+  const context = useContext(RealtimeContext);
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
+  useEffect(() => {
+    if (!context) return;
+    const handler = (event: RealtimeEvent) => {
+      if (event.entityType === entityType && event.entityUuid === entityUuid) {
+        callbackRef.current(event);
+      }
+    };
+    return context.subscribeEntity(handler);
+  }, [context, entityType, entityUuid]);
 }

@@ -384,7 +384,7 @@ export default async function ProposalDetailPage({ params }: PageProps) {
           )}
 
           {/* Comments */}
-          <ProposalComments proposalUuid={proposalUuid} />
+          <ProposalComments proposalUuid={proposalUuid} currentUserUuid={auth.actorUuid} />
 
           {/* Draft Notice */}
           {proposal.status === "draft" && (

@@ -10,6 +10,7 @@ import {
 } from "@/lib/uuid-resolver";
 import * as mentionService from "@/services/mention.service";
 import * as activityService from "@/services/activity.service";
+import { eventBus, type RealtimeEvent } from "@/lib/event-bus";
 
 export interface CommentListParams {
   companyUuid: string;
@@ -140,6 +141,20 @@ export async function createComment({
 
   // Get author name
   const authorName = await getActorName(comment.authorType, comment.authorUuid);
+
+  // Emit SSE event for real-time comment updates (fire-and-forget)
+  resolveProjectUuid(targetType, targetUuid).then((projectUuid) => {
+    if (projectUuid) {
+      eventBus.emitChange({
+        companyUuid,
+        projectUuid,
+        entityType: targetType as RealtimeEvent["entityType"],
+        entityUuid: targetUuid,
+        action: "updated",
+        actorUuid: authorUuid,
+      });
+    }
+  }).catch(() => {});
 
   // Process @mentions in comment content (fire-and-forget)
   processCommentMentions(

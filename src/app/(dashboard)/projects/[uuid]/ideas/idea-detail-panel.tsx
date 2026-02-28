@@ -38,7 +38,7 @@ import { MentionEditor, type MentionEditorRef } from "@/components/mention-edito
 import { AssignIdeaModal } from "./assign-idea-modal";
 import { ElaborationPanel } from "@/components/elaboration-panel";
 import { getElaborationAction, skipElaborationAction } from "./[ideaUuid]/elaboration-actions";
-import { useRealtimeEvent } from "@/contexts/realtime-context";
+import { useRealtimeEvent, useRealtimeEntityEvent } from "@/contexts/realtime-context";
 import type { ElaborationResponse } from "@/types/elaboration";
 
 interface Idea {
@@ -170,6 +170,14 @@ export function IdeaDetailPanel({
 
   // Subscribe to SSE events to refresh elaboration in real-time
   useRealtimeEvent(reloadElaboration);
+
+  // Auto-refresh comments when another user adds a comment
+  useRealtimeEntityEvent("idea", idea.uuid, (event) => {
+    if (event.actorUuid === currentUserUuid) return;
+    getIdeaCommentsAction(idea.uuid).then((result) => {
+      setComments(result.comments);
+    });
+  });
 
   // Skip elaboration state
   const [showSkipDialog, setShowSkipDialog] = useState(false);

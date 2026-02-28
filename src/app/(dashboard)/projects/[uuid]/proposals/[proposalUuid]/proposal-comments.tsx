@@ -14,6 +14,7 @@ import {
 } from "./comment-actions";
 import type { CommentResponse } from "@/services/comment.service";
 import { ContentWithMentions } from "@/components/mention-renderer";
+import { useRealtimeEntityEvent } from "@/contexts/realtime-context";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatRelativeTime(dateString: string, t: any): string {
@@ -33,15 +34,24 @@ function formatRelativeTime(dateString: string, t: any): string {
 
 interface ProposalCommentsProps {
   proposalUuid: string;
+  currentUserUuid?: string;
 }
 
-export function ProposalComments({ proposalUuid }: ProposalCommentsProps) {
+export function ProposalComments({ proposalUuid, currentUserUuid }: ProposalCommentsProps) {
   const t = useTranslations();
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const editorRef = useRef<MentionEditorRef>(null);
+
+  // Auto-refresh comments when another user adds a comment
+  useRealtimeEntityEvent("proposal", proposalUuid, (event) => {
+    if (currentUserUuid && event.actorUuid === currentUserUuid) return;
+    getProposalCommentsAction(proposalUuid).then((result) => {
+      setComments(result.comments);
+    });
+  });
 
   useEffect(() => {
     async function loadComments() {
