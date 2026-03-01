@@ -202,6 +202,8 @@ export async function createMentions(params: CreateMentionsParams): Promise<void
   }
 }
 
+const DEFAULT_EMPTY_QUERY_LIMIT = 5;
+
 /**
  * Search for mentionable users and agents within a company.
  * Permission scoping:
@@ -214,6 +216,45 @@ export async function searchMentionables(params: SearchMentionablesParams): Prom
   const effectiveLimit = Math.min(limit, 50);
   const results: Mentionable[] = [];
 
+  // Determine the owner UUID for agent scoping (computed once, reused below)
+  let agentOwnerUuid: string | undefined;
+  if (actorType === "user") {
+    agentOwnerUuid = actorUuid;
+  } else if (actorType === "agent" && ownerUuid) {
+    agentOwnerUuid = ownerUuid;
+  }
+
+  // If query is empty, return only user's own agents (ordered by createdAt DESC)
+  // Design decision: We surface recently created agents first for quick access.
+  // Human users are not shown in the empty-query case to keep the UX focused on AI agents.
+  if (!query) {
+    if (agentOwnerUuid) {
+      const agents = await prisma.agent.findMany({
+        where: {
+          companyUuid,
+          ownerUuid: agentOwnerUuid,
+        },
+        select: {
+          uuid: true,
+          name: true,
+          roles: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: Math.min(DEFAULT_EMPTY_QUERY_LIMIT, effectiveLimit),
+      });
+
+      for (const agent of agents) {
+        results.push({
+          type: "agent",
+          uuid: agent.uuid,
+          name: agent.name,
+          roles: agent.roles,
+        });
+      }
+    }
+
+    return results;
+  }
   // Search users (all company users are mentionable)
   const users = await prisma.user.findMany({
     where: {
@@ -243,13 +284,6 @@ export async function searchMentionables(params: SearchMentionablesParams): Prom
   }
 
   // Search agents with permission scoping
-  // Determine the owner UUID for agent scoping
-  let agentOwnerUuid: string | undefined;
-  if (actorType === "user") {
-    agentOwnerUuid = actorUuid;
-  } else if (actorType === "agent" && ownerUuid) {
-    agentOwnerUuid = ownerUuid;
-  }
 
   const agentWhere: {
     companyUuid: string;
