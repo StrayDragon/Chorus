@@ -111,16 +111,6 @@ export async function startElaboration({
     value: { depth, questionCount: questions.length, roundNumber },
   });
 
-  // Emit events for notification listener + UI SSE
-  eventBus.emit("activity", {
-    companyUuid,
-    projectUuid: resolvedProjectUuid,
-    targetType: "idea",
-    targetUuid: ideaUuid,
-    actorType,
-    actorUuid,
-    action: "elaboration_started",
-  });
   eventBus.emitChange({ companyUuid, projectUuid: resolvedProjectUuid, entityType: "idea", entityUuid: ideaUuid, action: "updated" });
 
   return formatRoundResponse(round);
@@ -233,15 +223,6 @@ export async function answerElaboration({
     },
   });
 
-  eventBus.emit("activity", {
-    companyUuid,
-    projectUuid: idea!.projectUuid,
-    targetType: "idea",
-    targetUuid: ideaUuid,
-    actorType,
-    actorUuid,
-    action: "elaboration_answered",
-  });
   eventBus.emitChange({ companyUuid, projectUuid: idea!.projectUuid, entityType: "idea", entityUuid: ideaUuid, action: "updated" });
 
   // Return updated round
@@ -320,15 +301,6 @@ export async function validateElaboration({
       },
     });
 
-    eventBus.emit("activity", {
-      companyUuid,
-      projectUuid: idea.projectUuid,
-      targetType: "idea",
-      targetUuid: ideaUuid,
-      actorType,
-      actorUuid,
-      action: "elaboration_resolved",
-    });
     eventBus.emitChange({ companyUuid, projectUuid: idea.projectUuid, entityType: "idea", entityUuid: ideaUuid, action: "updated" });
 
     const updated = await prisma.elaborationRound.findUnique({
@@ -394,15 +366,6 @@ export async function validateElaboration({
     },
   });
 
-  eventBus.emit("activity", {
-    companyUuid,
-    projectUuid: idea.projectUuid,
-    targetType: "idea",
-    targetUuid: ideaUuid,
-    actorType,
-    actorUuid,
-    action: "elaboration_followup",
-  });
   eventBus.emitChange({ companyUuid, projectUuid: idea.projectUuid, entityType: "idea", entityUuid: ideaUuid, action: "updated" });
 
   const updatedRound = await prisma.elaborationRound.findUnique({
@@ -459,15 +422,6 @@ export async function skipElaboration({
     value: { reason },
   });
 
-  eventBus.emit("activity", {
-    companyUuid,
-    projectUuid: idea.projectUuid,
-    targetType: "idea",
-    targetUuid: ideaUuid,
-    actorType,
-    actorUuid,
-    action: "elaboration_skipped",
-  });
   eventBus.emitChange({ companyUuid, projectUuid: idea.projectUuid, entityType: "idea", entityUuid: ideaUuid, action: "updated" });
 }
 

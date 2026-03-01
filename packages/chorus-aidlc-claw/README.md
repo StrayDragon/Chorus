@@ -1,4 +1,14 @@
-# chorus-aidlc-claw
+<p align="center">
+  <img src="images/slug.png" alt="chorus-aidlc-claw" width="240" />
+</p>
+
+<p align="center"><strong>chorus-aidlc-claw</strong></p>
+
+<p align="center">
+  <a href="https://discord.gg/SwcCMaMmR">
+    <img src="https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
+  </a>
+</p>
 
 OpenClaw plugin for [Chorus](https://github.com/Chorus-AIDLC/Chorus) — the AI-DLC (AI-Driven Development Lifecycle) collaboration platform.
 
@@ -29,7 +39,7 @@ Chorus Server
   │     └──────────────────────┘      (immediate heartbeat)
   │
   ├── MCP (POST /api/mcp)
-  │     All 50+ Chorus MCP tools available as native
+  │     41 Chorus MCP tools available as native
   │     OpenClaw agent tools via @modelcontextprotocol/sdk
   │
   └─────────────────────────────────────────────────────
@@ -37,7 +47,7 @@ Chorus Server
 
 **Key design decisions:**
 
-- **MCP Client, not REST** — Uses `@modelcontextprotocol/sdk` to call Chorus MCP tools directly. Zero Chorus-side code changes needed. All 50+ tools are automatically available. When Chorus adds new tools, they work instantly.
+- **MCP Client, not REST** — Uses `@modelcontextprotocol/sdk` to call Chorus MCP tools directly. Zero Chorus-side code changes needed. 41 tools registered out of the box. When Chorus adds new MCP tools, adding them to the plugin is a one-liner.
 - **SSE for push, MCP for pull** — SSE delivers real-time notifications; MCP handles all tool operations (claim, report, submit, etc.).
 - **Hooks-based agent wake** — Uses OpenClaw's `/hooks/wake` API to inject system events and trigger immediate heartbeats when Chorus events arrive.
 
@@ -116,13 +126,14 @@ The plugin maintains a persistent SSE connection to Chorus and reacts to these e
 | `task_assigned` | Auto-claim task (if `autoStart: true`) + wake agent to start work |
 | `mentioned` | Wake agent with @mention context |
 | `elaboration_requested` | Wake agent to review elaboration questions |
-| `elaboration_answered` | Wake agent to validate answers and proceed |
-| `proposal_rejected` | Wake agent with rejection reason to fix and resubmit |
-| `proposal_approved` | Wake agent to check newly created tasks |
+| `elaboration_answered` | Wake agent to review answers, @mention answerer, then validate or start new round |
+| `proposal_rejected` | Wake agent with rejection reason to fix and resubmit, @mention reviewer |
+| `proposal_approved` | Wake agent to check newly created tasks, @mention approver |
+| `idea_claimed` | Wake agent when an idea is assigned to it, @mention assigner |
 
 **Resilience:** Exponential backoff reconnect (1s → 2s → 4s → ... → 30s max). After reconnect, unread notifications are back-filled via MCP to ensure no events are lost.
 
-### Registered Tools (21 total)
+### Registered Tools (41 total)
 
 #### PM Workflow (14 tools)
 
@@ -152,11 +163,11 @@ The plugin maintains a persistent SSE connection to Chorus and reacts to these e
 | `chorus_report_work` | Report work progress |
 | `chorus_submit_for_verify` | Submit completed task for verification |
 
-#### Common (8 tools)
+#### Common & Exploration (21 tools)
 
 | Tool | Description |
 |------|-------------|
-| `chorus_checkin` | Agent check-in (persona, roles, assignments) |
+| `chorus_checkin` | Agent check-in (identity, owner info, roles, assignments) |
 | `chorus_get_notifications` | Fetch notifications (default: unread) |
 | `chorus_get_project` | Get project details |
 | `chorus_get_task` | Get task details |
@@ -164,6 +175,25 @@ The plugin maintains a persistent SSE connection to Chorus and reacts to these e
 | `chorus_get_available_tasks` | List open tasks in a project |
 | `chorus_get_available_ideas` | List open ideas in a project |
 | `chorus_add_comment` | Comment on idea/proposal/task/document |
+| `chorus_search_mentionables` | Search for @mentionable users and agents |
+| `chorus_list_projects` | List all projects |
+| `chorus_list_tasks` | List tasks in a project (filterable by status/priority) |
+| `chorus_get_ideas` | List ideas in a project (filterable by status) |
+| `chorus_get_proposals` | List proposals in a project |
+| `chorus_get_documents` | List documents in a project |
+| `chorus_get_document` | Get full document content |
+| `chorus_get_unblocked_tasks` | List tasks ready to start (dependencies resolved) |
+| `chorus_get_activity` | Get project activity stream |
+| `chorus_get_comments` | Get comments on an entity |
+| `chorus_get_elaboration` | Get full elaboration state for an idea |
+| `chorus_get_my_assignments` | Get all claimed ideas and tasks |
+
+#### Admin (2 tools)
+
+| Tool | Description |
+|------|-------------|
+| `chorus_admin_create_idea` | Create an idea on behalf of humans |
+| `chorus_admin_create_project` | Create a new project |
 
 ### Commands
 
@@ -192,7 +222,7 @@ packages/chorus-aidlc-claw/
     └── tools/
         ├── pm-tools.ts       # 14 PM workflow tools
         ├── dev-tools.ts      # 4 Developer tools
-        └── common-tools.ts   # 8 common query tools
+        └── common-tools.ts   # 21 common/exploration/admin tools
 ```
 
 ### MCP Client (`mcp-client.ts`)

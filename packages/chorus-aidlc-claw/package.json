@@ -5,16 +5,8 @@
   "license": "MIT",
   "type": "module",
   "main": "src/index.ts",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.ts"
-    }
-  },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch"
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "openclaw": ">=2026.0.0"
@@ -29,9 +21,16 @@
   "openclaw": {
     "extensions": ["src/index.ts"]
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Chorus-AIDLC/Chorus",
+    "directory": "packages/chorus-aidlc-claw"
+  },
+  "homepage": "https://chorus-aidlc.github.io/Chorus/",
+  "keywords": ["openclaw", "chorus", "ai-dlc", "mcp", "plugin", "agent"],
   "files": [
-    "dist",
     "src",
+    "images",
     "openclaw.plugin.json",
     "README.md"
   ]
