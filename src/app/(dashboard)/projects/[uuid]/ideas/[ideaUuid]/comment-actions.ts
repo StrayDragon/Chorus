@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { listComments, createComment, type CommentResponse } from "@/services/comment.service";
 import { getIdeaByUuid } from "@/services/idea.service";
@@ -68,7 +67,8 @@ export async function createIdeaCommentAction(
       action: "comment_added",
     });
 
-    revalidatePath(`/projects/${idea.projectUuid}/ideas`);
+    // No revalidatePath here — comment is added to client state optimistically.
+    // The SSE-triggered refresh will update the comment count in the ideas list.
 
     return { success: true, comment };
   } catch (error) {
