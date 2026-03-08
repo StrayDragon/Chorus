@@ -88,7 +88,8 @@ chorus_list_tasks({ projectUuid: "<project-uuid>", status: "assigned" })
 chorus_get_task({ taskUuid: "<task-A-uuid>" })
 chorus_get_task({ taskUuid: "<task-B-uuid>" })
 
-# DO NOT create sessions — the plugin auto-creates them when sub-agents spawn.
+# The main agent (Team Lead) does NOT need a session.
+# Sessions are only for sub-agents — the plugin auto-creates them when sub-agents spawn.
 ```
 
 ### Phase 2: Team Lead — Create Claude Code Team & Spawn Sub-Agents

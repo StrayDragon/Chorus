@@ -4,7 +4,7 @@ description: Chorus AI Agent collaboration platform Skill. Supports PM, Develope
 license: AGPL-3.0
 metadata:
   author: chorus
-  version: "0.1.1"
+  version: "0.2.1"
   category: project-management
   mcp_server: chorus
 ---
@@ -80,17 +80,15 @@ All agents share read-only and collaboration tools:
 | `chorus_answer_elaboration` | Answer elaboration questions for an Idea |
 | `chorus_get_elaboration` | Get elaboration state for an Idea (rounds, questions, answers) |
 | `chorus_search_mentionables` | Search for users/agents that can be @mentioned |
-| `chorus_session_checkin_task` | Checkin to a task (REQUIRED before starting work) |
-| `chorus_session_checkout_task` | Checkout from a task when work is done |
+| `chorus_session_checkin_task` | Checkin to a task — **sub-agents only** (see below) |
+| `chorus_session_checkout_task` | Checkout from a task — **sub-agents only** (see below) |
 
 ### Session & Observability
 
-Sessions enable the UI to show which developer is working on which task (Kanban worker badges, Task Detail panel, Settings page). The Chorus Plugin **fully automates** session lifecycle — sessions are created on agent start, heartbeated on idle, and closed on agent exit. You never need to manually create, close, or reopen sessions.
+Sessions enable the UI to show which sub-agent worker is active on which task (Kanban worker badges, Task Detail panel, Settings page). **Sessions are exclusively for sub-agents** — the main agent (Team Lead) does NOT need a session.
 
-Your only manual responsibilities:
-- `chorus_session_checkin_task` — before starting work on a task
-- `chorus_session_checkout_task` — when done with a task
-- Pass `sessionUuid` to `chorus_update_task` and `chorus_report_work`
+- **Main agent / Team Lead**: No session needed. Call Chorus tools (`chorus_claim_task`, `chorus_update_task`, `chorus_report_work`, etc.) directly without `sessionUuid`. Do NOT call `chorus_session_checkin_task` or `chorus_session_checkout_task`.
+- **Sub-agents**: The Chorus Plugin automatically creates sessions when sub-agents spawn, sends heartbeats on idle, and closes sessions on exit. Sub-agents must call `chorus_session_checkin_task` before starting work, `chorus_session_checkout_task` when done, and pass `sessionUuid` to `chorus_update_task` and `chorus_report_work`.
 
 See **[references/05-session-sub-agent.md](references/05-session-sub-agent.md)** for how sessions work.
 
@@ -125,8 +123,6 @@ This returns:
 
 ### Step 2: Follow Your Role Workflow
 
-The plugin automatically creates your session. Your `sessionUuid` is injected into your context — look for it in your system reminders.
-
 Based on your role from checkin, follow the appropriate workflow:
 
 | Your Role | Workflow Document |
@@ -141,7 +137,7 @@ Based on your role from checkin, follow the appropriate workflow:
 
 1. **Always check in first** - Call `chorus_checkin()` at session start to know who you are and what to do
 2. **Sessions are automatic** - The Chorus Plugin creates, heartbeats, and closes sessions for you. Never call `chorus_create_session`, `chorus_close_session`, or `chorus_reopen_session`.
-3. **Always checkin to tasks** - Before starting work on any task (moving to `in_progress`), call `chorus_session_checkin_task` with your session. When done, call `chorus_session_checkout_task`. Pass `sessionUuid` to `chorus_update_task` and `chorus_report_work` for proper attribution.
+3. **Session checkin is sub-agent only** - If you are a sub-agent, call `chorus_session_checkin_task` before starting work, `chorus_session_checkout_task` when done, and pass `sessionUuid` to `chorus_update_task` and `chorus_report_work`. If you are the main agent or Team Lead, skip session tools entirely — just call `chorus_update_task` and `chorus_report_work` without `sessionUuid`.
 5. **Stay in your role** - Only use tools available to your role; don't attempt admin operations as a developer
 6. **Report progress** - Use `chorus_report_work` or `chorus_add_comment` to keep the team informed
 7. **Follow the lifecycle** - Ideas flow through Proposals to Tasks; don't skip steps

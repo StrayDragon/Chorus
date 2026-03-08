@@ -15,9 +15,10 @@ Developer Agent is responsible for **claiming tasks, writing code, reporting pro
 **Work Reporting:**
 - `chorus_report_work` - Report progress or completion (writes a comment on the task + records activity, with optional status update)
 
-**Session (Plugin auto-manages lifecycle):**
-- `chorus_session_checkin_task` / `chorus_session_checkout_task` - Track which task you are working on (MANDATORY before starting any task)
-- Always pass `sessionUuid` to `chorus_update_task` and `chorus_report_work` for attribution
+**Session (sub-agents only — main agent skips these):**
+- `chorus_session_checkin_task` / `chorus_session_checkout_task` - Track which task you are working on (sub-agents only)
+- Sub-agents: always pass `sessionUuid` to `chorus_update_task` and `chorus_report_work` for attribution
+- Main agent / Team Lead: call these tools without `sessionUuid` — no session needed
 - See [05-session-sub-agent.md](05-session-sub-agent.md) for how sessions work
 
 **Public Tools (shared with all roles):** see [00-common-tools.md](00-common-tools.md) for full list (checkin, query, comment tools)
@@ -37,11 +38,11 @@ Review your persona, current assignments, and pending work counts. The checkin r
 - What you're already working on (assigned tasks)
 - How much work is available (pending counts)
 
-### Step 1.5: Get Your Session
+### Step 1.5: Get Your Session (Sub-Agents Only)
 
-**MANDATORY.** You need a session before starting any work. The Chorus Plugin **automatically creates your session** — look for a "Chorus Session" section in your system reminders containing your `sessionUuid` and workflow steps.
+**Skip this step if you are the main agent or Team Lead** — you don't need a session.
 
-Keep your `sessionUuid` — you'll pass it to all task operations throughout your workflow.
+If you are a **sub-agent**, the Chorus Plugin automatically creates your session — look for a "Chorus Session" section in your system reminders containing your `sessionUuid` and workflow steps. Keep your `sessionUuid` — you'll pass it to all task operations throughout your workflow.
 
 ### Step 2: Find Work
 
@@ -140,16 +141,20 @@ Before coding, understand the full picture. You need to read your task, its upst
 
 ### Step 5: Start Working
 
-**First, checkin your session to the task** so the UI shows you as an active worker:
+**If you are a sub-agent**, first checkin your session to the task so the UI shows you as an active worker:
 
 ```
 chorus_session_checkin_task({ sessionUuid: "<session-uuid>", taskUuid: "<task-uuid>" })
 ```
 
-Then mark the task as in-progress (always pass `sessionUuid`):
+Then mark the task as in-progress:
 
 ```
+# Sub-agent (pass sessionUuid):
 chorus_update_task({ taskUuid: "<task-uuid>", status: "in_progress", sessionUuid: "<session-uuid>" })
+
+# Main agent (no sessionUuid needed):
+chorus_update_task({ taskUuid: "<task-uuid>", status: "in_progress" })
 ```
 
 > **Dependency enforcement**: If this task has unresolved dependencies (dependsOn tasks not in `done` or `closed` status), the call will be rejected with a detailed error listing each blocker's title, status, assignee, and active session. Use `chorus_get_unblocked_tasks` to find tasks you can start now. Only admin can force-bypass this check.
@@ -174,7 +179,7 @@ chorus_report_work({
 })
 ```
 
-**Always pass `sessionUuid`** — this attributes the report to your session and auto-updates the heartbeat.
+**Sub-agents: always pass `sessionUuid`** — this attributes the report to your session and auto-updates the heartbeat. Main agents can omit `sessionUuid`.
 
 Report with a status update when work is complete:
 
@@ -199,9 +204,10 @@ chorus_add_comment({
 
 ### Step 7: Submit for Verification
 
-When your work is complete and tested, checkout from the task and submit:
+When your work is complete and tested, submit for verification. **Sub-agents** should checkout from the task first:
 
 ```
+# Sub-agents only — checkout before submitting:
 chorus_session_checkout_task({ sessionUuid: "<session-uuid>", taskUuid: "<task-uuid>" })
 
 chorus_submit_for_verify({

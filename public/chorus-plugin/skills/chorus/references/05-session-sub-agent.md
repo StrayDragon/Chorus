@@ -4,24 +4,24 @@
 
 The Chorus Session mechanism tracks **which agent is currently working on which task**. Session data powers the UI observability features: Kanban board worker badges, Task Detail panel active workers, Settings page session list.
 
-The Chorus Plugin **fully automates** session lifecycle — you never need to manually create, close, or reopen sessions.
+**Sessions are exclusively for sub-agents.** The main agent (Team Lead) does NOT need a session — it works with Chorus tools directly without `sessionUuid`. The Chorus Plugin fully automates sub-agent session lifecycle — you never need to manually create, close, or reopen sessions.
 
 ### Core Concepts
 
 ```
-Single Agent (main agent working directly):
-  Agent ──> Session (auto) ──checkin──> Task A
+Main Agent (no session needed):
+  Agent ──> chorus_claim_task, chorus_update_task, chorus_report_work (no sessionUuid)
 
-Multi-Agent (Swarm Mode):
-  Main Agent (Team Lead)
+Multi-Agent / Swarm Mode (sub-agents get sessions):
+  Main Agent (Team Lead) — no session
     ├── Sub-Agent A ──> Session (auto) ──checkin──> Task A
     ├── Sub-Agent B ──> Session (auto) ──checkin──> Task B
     └── Sub-Agent C ──> Session (auto) ──checkin──> Task A, Task B
 ```
 
 - **Agent** = A Chorus identity (has API Key, role, persona)
-- **Session** = A work unit under that Agent (one session per worker, auto-created by plugin)
-- **Checkin** = Session declares it is working on a specific Task
+- **Session** = A work unit for a **sub-agent** (one session per worker, auto-created by plugin)
+- **Checkin** = Session declares it is working on a specific Task (sub-agents only)
 - **Heartbeat** = Periodic signal indicating the worker is still active (auto-sent by plugin's TeammateIdle hook)
 
 ### Plugin Automation
@@ -32,16 +32,18 @@ Multi-Agent (Swarm Mode):
 | Sub-agent idle | `TeammateIdle` | Sends `chorus_session_heartbeat` to keep session active |
 | Sub-agent exits | `SubagentStop` | Checks out all tasks + closes the session |
 
-**What you still do manually:**
+**What sub-agents still do manually:**
 - `chorus_session_checkin_task` — before starting work on a task
 - `chorus_session_checkout_task` — when done with a task
 - Pass `sessionUuid` to `chorus_update_task` and `chorus_report_work` for attribution
+
+**Main agent / Team Lead:** No session tools needed. Call `chorus_update_task` and `chorus_report_work` without `sessionUuid`.
 
 ### Mapping to Claude Code Agent Teams
 
 | Claude Code Concept | Chorus Concept | Description |
 |---------------------|----------------|-------------|
-| Single Agent | Agent + 1 Session (auto) | Plugin creates session automatically |
+| Single Agent (main) | Agent, no session | Works directly with Chorus tools, no sessionUuid needed |
 | Team Lead Agent | Main Agent | Assigns work to sub-agents; does NOT manage sessions |
 | Spawned Sub-Agent | Session (auto-created) | Each sub-agent gets its own session automatically |
 | Sub-Agent's Task | Session Checkin | Sub-agent checks in to the task it is working on |
@@ -67,7 +69,7 @@ active ──(1h no heartbeat)──> inactive ──(heartbeat)──> active
 
 ## Session-Enhanced Tools
 
-The following tools accept an optional `sessionUuid` parameter — **always pass it** for proper attribution:
+The following tools accept an optional `sessionUuid` parameter — **sub-agents should always pass it** for proper attribution (main agent can omit it):
 
 | Tool | Session Behavior |
 |------|-----------------|
