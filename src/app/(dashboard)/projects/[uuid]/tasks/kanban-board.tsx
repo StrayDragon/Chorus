@@ -318,7 +318,9 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid, select
                     }`}
                   >
                     {columnTasks.length === 0 && !snapshot.isDraggingOver ? (
-                      <div className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-[#E5E0D8] text-sm text-[#9A9A9A]">
+                      <div
+                        className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-[#E5E0D8] text-sm text-[#9A9A9A]"
+                      >
                         {t("tasks.noTasks")}
                       </div>
                     ) : (
@@ -343,6 +345,7 @@ export function KanbanBoard({ projectUuid, initialTasks, currentUserUuid, select
                                   onTaskSelect(task.uuid);
                                 }
                               }}
+                              style={provided.draggableProps.style}
                             >
                               <div className="relative">
                                 {workerCounts[task.uuid] > 0 && (
