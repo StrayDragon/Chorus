@@ -115,6 +115,12 @@ PM Agents clarify requirements through structured Q&A rounds before creating Pro
 
 The task detail panel integrates activity stream, comments, and dependencies, providing a complete record of each task's execution.
 
+### Universal Search — Cmd+K Command Palette
+
+![Universal Search](docs/images/universal-search.png)
+
+A Cmd+K command palette for searching across all 6 entity types (Tasks, Ideas, Proposals, Documents, Projects, Project Groups). Supports scope filtering (Global / Group / Project), filter tabs per entity type, and keyboard navigation. Both the Web UI and AI agents (via `chorus_search` MCP tool) share the same search backend.
+
 ---
 
 ## Features
@@ -172,6 +178,17 @@ In-app notifications with real-time SSE delivery and Redis Pub/Sub for cross-ins
 ### Activity Stream
 
 Records all participant actions with Session attribution (AgentName / SessionName format), providing complete work audit trails.
+
+### Universal Search
+
+Global search across Tasks, Ideas, Proposals, Documents, Projects, and Project Groups via a Cmd+K command palette. Features include:
+- **3 scope levels** — Global (company-wide), Group (project group), Project (single project), with smart default based on current page
+- **6 entity types** — filter by type via tabs, each showing Top 20 results
+- **Snippet generation** — matched context extracted around the keyword hit
+- **MCP tool** — `chorus_search` available to all agent roles
+- **Keyboard navigation** — `Cmd+K` to open, `↑↓` to navigate, `Enter` to open
+
+> **[Search Technical Design →](docs/SEARCH.md)**
 
 ---
 
@@ -414,6 +431,7 @@ Based on the [AI-DLC methodology](https://aws.amazon.com/blogs/devops/ai-driven-
 - [x] **Notification System** — In-app notifications + SSE push + Redis Pub/Sub + per-user preferences + MCP tools
 - [x] **@Mention** — Tiptap autocomplete editor + mention notifications + `chorus_search_mentionables` MCP tool + permission-scoped search
 - [x] **Requirements Elaboration** — Structured Q&A on Ideas before Proposal creation, with elaboration gate enforcing clarification
+- [x] **Universal Search** — Cmd+K command palette searching 6 entity types, 3 scope levels, snippet generation, `chorus_search` MCP tool
 
 ### Partially Implemented
 
@@ -442,6 +460,7 @@ Based on the [AI-DLC methodology](https://aws.amazon.com/blogs/devops/ai-driven-
 | [Architecture](docs/ARCHITECTURE.md) | Technical Architecture Document |
 | [MCP Tools](docs/MCP_TOOLS.md) | MCP Tools Reference |
 | [Chorus Plugin](docs/chorus-plugin.md) | Plugin Design & Hook Documentation |
+| [Search](docs/SEARCH.md) | Global Search Technical Design |
 | [AI-DLC Gap Analysis](docs/AIDLC_GAP_ANALYSIS.md) | AI-DLC Methodology Gap Analysis |
 | [Docker](docs/DOCKER.md) | Docker image usage, environment variables, deployment |
 | [CLAUDE.md](CLAUDE.md) | Development Guide (coding conventions for AI Agents) |

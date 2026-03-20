@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0] - 2026-03-20
+
+### Added
+- **Universal Search**: Global search across tasks, ideas, proposals, documents, projects, and project groups with unified MCP tool and UI. (#50)
+- **Rich Claim/Assign Response**: `chorus_claim_task` and `chorus_pm_assign_task` now return full task details and dependency hints, eliminating extra round-trips for agents. (#52)
+
+### Changed
+- **DEFAULT_USER Session Extended to 365 Days**: Default user sessions no longer expire frequently, reducing unnecessary logouts. (#53)
+
+### Fixed
+- **Settings Page Role Badges**: Replaced checkbox role display with Badge components on the settings page. (#54)
+
+### Docs
+- Added search technical design document and architecture reference. (#51)
+
+---
+
 ## [0.4.2] - 2026-03-20
 
 ### Added
